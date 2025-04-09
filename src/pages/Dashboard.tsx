@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -25,7 +24,6 @@ const Dashboard = () => {
   const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
-    // Check if user is logged in
     if (!isLoadingAuth) {
       if (!user) {
         toast.error("You must be logged in to view this page");
@@ -40,15 +38,12 @@ const Dashboard = () => {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      // Load user bookings
       const bookingsData = await getUserBookings();
       setBookings(bookingsData);
 
-      // Load venues
       const venuesData = await getVenues();
       setVenues(venuesData);
 
-      // Load today's slots
       const today = new Date();
       const todayFormatted = format(today, "yyyy-MM-dd");
       const todaySlotsData = await getSlotsByDate(todayFormatted);
@@ -71,11 +66,9 @@ const Dashboard = () => {
       await cancelBooking(bookingId);
       toast.success("Booking cancelled successfully");
       
-      // Refresh bookings
       const updatedBookings = await getUserBookings();
       setBookings(updatedBookings);
       
-      // Refresh today's slots
       const today = new Date();
       const todayFormatted = format(today, "yyyy-MM-dd");
       const todaySlotsData = await getSlotsByDate(todayFormatted);
@@ -102,11 +95,10 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar isLoggedIn={true} />
+      <Navbar />
 
       <div className="flex-grow pt-24 pb-16 px-4 bg-gray-50">
         <div className="container mx-auto">
-          {/* Welcome Section */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">
               Welcome, {user?.name}!
@@ -116,7 +108,6 @@ const Dashboard = () => {
             </p>
           </div>
 
-          {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <Card>
               <CardContent className="p-6 flex items-center justify-between">
@@ -161,7 +152,6 @@ const Dashboard = () => {
             </Card>
           </div>
 
-          {/* Main Content Tabs */}
           <Tabs defaultValue="upcoming">
             <TabsList className="grid w-full grid-cols-3 max-w-md mb-8">
               <TabsTrigger value="upcoming">Upcoming Games</TabsTrigger>
@@ -169,7 +159,6 @@ const Dashboard = () => {
               <TabsTrigger value="availability">Today's Slots</TabsTrigger>
             </TabsList>
 
-            {/* Upcoming Games Tab */}
             <TabsContent value="upcoming" id="upcoming-games">
               <div className="mb-4 flex justify-between items-center">
                 <h2 className="text-xl font-semibold">Your Upcoming Games</h2>
@@ -240,7 +229,6 @@ const Dashboard = () => {
               )}
             </TabsContent>
 
-            {/* Venues Tab */}
             <TabsContent value="venues">
               <div className="mb-4">
                 <h2 className="text-xl font-semibold">Available Venues</h2>
@@ -289,7 +277,6 @@ const Dashboard = () => {
               )}
             </TabsContent>
 
-            {/* Today's Availability Tab */}
             <TabsContent value="availability">
               <div className="mb-4">
                 <h2 className="text-xl font-semibold">Today's Available Slots</h2>

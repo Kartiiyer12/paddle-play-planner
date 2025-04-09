@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -34,7 +33,6 @@ const AdminPanel = () => {
   const [slotToDelete, setSlotToDelete] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if user is logged in and is admin
     if (!isLoadingAuth) {
       if (!user) {
         toast.error("You must be logged in to access this page");
@@ -135,11 +133,10 @@ const AdminPanel = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar isLoggedIn={true} />
+      <Navbar />
 
       <div className="flex-grow pt-24 pb-16 px-4 bg-gray-50">
         <div className="container mx-auto">
-          {/* Admin Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
             <p className="text-gray-600 mt-2">
@@ -147,7 +144,6 @@ const AdminPanel = () => {
             </p>
           </div>
 
-          {/* Admin Tabs */}
           <Tabs defaultValue="venues">
             <TabsList className="grid w-full grid-cols-3 max-w-md mb-8">
               <TabsTrigger value="users">User Management</TabsTrigger>
@@ -155,7 +151,6 @@ const AdminPanel = () => {
               <TabsTrigger value="slots">Slot Management</TabsTrigger>
             </TabsList>
 
-            {/* Users Tab */}
             <TabsContent value="users">
               <Card>
                 <CardContent className="p-6">
@@ -167,7 +162,6 @@ const AdminPanel = () => {
               </Card>
             </TabsContent>
 
-            {/* Venues Tab */}
             <TabsContent value="venues">
               <Card className="mb-6">
                 <CardContent className="p-6">
@@ -242,7 +236,6 @@ const AdminPanel = () => {
               </Card>
             </TabsContent>
 
-            {/* Slots Tab */}
             <TabsContent value="slots">
               <Card className="mb-6">
                 <CardContent className="p-6">
@@ -324,7 +317,6 @@ const AdminPanel = () => {
         </div>
       </div>
 
-      {/* Venue Form Dialog */}
       <Dialog open={isVenueDialogOpen} onOpenChange={setIsVenueDialogOpen}>
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -337,7 +329,6 @@ const AdminPanel = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Slot Form Dialog */}
       <Dialog open={isSlotDialogOpen} onOpenChange={setIsSlotDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -350,7 +341,6 @@ const AdminPanel = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Venue Confirmation Dialog */}
       <Dialog open={isDeleteVenueDialogOpen} onOpenChange={setIsDeleteVenueDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -377,7 +367,6 @@ const AdminPanel = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Slot Confirmation Dialog */}
       <Dialog open={isDeleteSlotDialogOpen} onOpenChange={setIsDeleteSlotDialogOpen}>
         <DialogContent>
           <DialogHeader>

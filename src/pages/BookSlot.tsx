@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -28,7 +27,6 @@ const BookSlot = () => {
   const [isBooking, setIsBooking] = useState(false);
 
   useEffect(() => {
-    // Check if user is logged in
     if (!isLoadingAuth) {
       if (!user) {
         toast.error("You must be logged in to book slots");
@@ -46,7 +44,6 @@ const BookSlot = () => {
       const data = await getVenues();
       setVenues(data);
       
-      // If we have venues, select the first one by default
       if (data.length > 0 && !selectedVenue) {
         setSelectedVenue(data[0].id);
       }
@@ -72,7 +69,6 @@ const BookSlot = () => {
       const dateString = format(selectedDate, "yyyy-MM-dd");
       const data = await getSlotsByVenue(selectedVenue);
       
-      // Filter slots by selected date
       const filteredSlots = data.filter(slot => slot.date === dateString);
       setAvailableSlots(filteredSlots);
     } catch (error) {
@@ -92,7 +88,6 @@ const BookSlot = () => {
       await bookSlot(slotId, venueId);
       toast.success("Slot booked successfully!");
       
-      // Refresh slots to update availability
       loadSlots();
     } catch (error: any) {
       toast.error(error.message || "Failed to book slot");
@@ -111,11 +106,10 @@ const BookSlot = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar isLoggedIn={true} />
+      <Navbar />
 
       <div className="flex-grow pt-24 pb-16 px-4 bg-gray-50">
         <div className="container mx-auto">
-          {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Book a Slot</h1>
             <p className="text-gray-600 mt-2">
@@ -123,11 +117,9 @@ const BookSlot = () => {
             </p>
           </div>
 
-          {/* Filters */}
           <Card className="mb-8">
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Venue Filter */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Select Venue</label>
                   <Select value={selectedVenue || ""} onValueChange={setSelectedVenue}>
@@ -144,7 +136,6 @@ const BookSlot = () => {
                   </Select>
                 </div>
 
-                {/* Date Filter */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Select Date</label>
                   <Popover>
@@ -173,7 +164,6 @@ const BookSlot = () => {
                   </Popover>
                 </div>
 
-                {/* Search Button */}
                 <div className="flex items-end">
                   <Button 
                     className="w-full bg-pickleball-purple hover:bg-pickleball-purple/90"
@@ -187,7 +177,6 @@ const BookSlot = () => {
             </CardContent>
           </Card>
 
-          {/* Available Slots */}
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-4">Available Slots</h2>
 
