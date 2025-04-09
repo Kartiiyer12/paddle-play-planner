@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { mockUsers } from "@/data/mockData";
+import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -16,32 +16,34 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call with timeout
-    setTimeout(() => {
-      const user = mockUsers.find((user) => user.email === email);
-      
-      if (user && password === "password") { // Simple mock auth
-        // In a real app, we would store the user details in a state management solution
-        localStorage.setItem("currentUser", JSON.stringify(user));
-        
-        toast.success("Login successful!");
-        
-        // Redirect based on user role
-        if (user.role === "admin") {
-          navigate("/admin");
-        } else {
-          navigate("/dashboard");
-        }
-      } else {
-        toast.error("Invalid email or password. Please try again.");
+    try {
+      // Sign in with Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        throw error;
       }
+
+      // Success, show message and redirect
+      toast.success("Login successful!");
       
+      // Check if user is admin (in a real app, you'd check a role in the database)
+      // For now we'll assume all users are regular users
+      navigate("/dashboard");
+      
+    } catch (error: any) {
+      console.error("Login error:", error);
+      toast.error(error.message || "Invalid email or password. Please try again.");
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -106,12 +108,6 @@ const Login = () => {
               </CardFooter>
             </form>
           </Card>
-
-          <div className="mt-6 text-center text-sm text-gray-600">
-            <p>For demo purposes:</p>
-            <p>Admin login: admin@example.com / password</p>
-            <p>User login: user@example.com / password</p>
-          </div>
         </div>
       </div>
 

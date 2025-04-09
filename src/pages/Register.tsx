@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { supabase } from "@/integrations/supabase/client";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ const Register = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
@@ -43,13 +44,31 @@ const Register = () => {
       return;
     }
 
-    // Simulate API call with timeout
-    setTimeout(() => {
-      // In a real app, we would register the user with Supabase here
+    try {
+      // Register the user with Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.name,
+          }
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      // Success, show a message and redirect
       toast.success("Registration successful! Please check your email to verify your account.");
       navigate("/login");
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      toast.error(error.message || "An error occurred during registration");
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
