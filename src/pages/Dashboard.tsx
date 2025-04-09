@@ -8,41 +8,91 @@ import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Calendar, Clock, MapPin } from "lucide-react";
-import { User, BookingWithDetails } from "@/models/types";
-import { getBookingsWithDetails, mockSlots, mockVenues } from "@/data/mockData";
+import { BookingWithDetails, Venue, Slot } from "@/models/types";
+import { useAuth } from "@/context/AuthContext";
+import { getUserBookings, cancelBooking } from "@/services/bookingService";
+import { getVenues } from "@/services/venueService";
+import { getSlotsByDate } from "@/services/slotService";
+import { format } from "date-fns";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, isLoading: isLoadingAuth } = useAuth();
   const [bookings, setBookings] = useState<BookingWithDetails[]>([]);
+  const [venues, setVenues] = useState<Venue[]>([]);
+  const [todaySlots, setTodaySlots] = useState<Slot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     // Check if user is logged in
-    const userData = localStorage.getItem("currentUser");
-    if (!userData) {
-      toast.error("You must be logged in to view this page");
-      navigate("/login");
+    if (!isLoadingAuth) {
+      if (!user) {
+        toast.error("You must be logged in to view this page");
+        navigate("/login");
+        return;
+      }
+
+      loadData();
+    }
+  }, [navigate, user, isLoadingAuth]);
+
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      // Load user bookings
+      const bookingsData = await getUserBookings();
+      setBookings(bookingsData);
+
+      // Load venues
+      const venuesData = await getVenues();
+      setVenues(venuesData);
+
+      // Load today's slots
+      const today = new Date();
+      const todayFormatted = format(today, "yyyy-MM-dd");
+      const todaySlotsData = await getSlotsByDate(todayFormatted);
+      setTodaySlots(todaySlotsData);
+    } catch (error) {
+      toast.error("Failed to load dashboard data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancelBooking = async (bookingId: string) => {
+    if (!user) {
+      toast.error("You must be logged in to cancel bookings");
       return;
     }
 
-    // Parse user data
-    const parsedUser: User = JSON.parse(userData);
-    setUser(parsedUser);
-
-    // Get user bookings
-    const userBookings = getBookingsWithDetails(parsedUser.id);
-    setBookings(userBookings);
-    
-    setIsLoading(false);
-  }, [navigate]);
+    setIsCancelling(true);
+    try {
+      await cancelBooking(bookingId);
+      toast.success("Booking cancelled successfully");
+      
+      // Refresh bookings
+      const updatedBookings = await getUserBookings();
+      setBookings(updatedBookings);
+      
+      // Refresh today's slots
+      const today = new Date();
+      const todayFormatted = format(today, "yyyy-MM-dd");
+      const todaySlotsData = await getSlotsByDate(todayFormatted);
+      setTodaySlots(todaySlotsData);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to cancel booking");
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { weekday: 'long', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString('en-US', options);
   };
 
-  if (isLoading) {
+  if (isLoadingAuth || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>Loading...</p>
@@ -88,7 +138,11 @@ const Dashboard = () => {
                   <h3 className="font-medium text-gray-900">My Bookings</h3>
                   <p className="text-sm text-gray-600">You have {bookings.length} upcoming games</p>
                 </div>
-                <Button variant="outline" className="border-pickleball-purple text-pickleball-purple">
+                <Button 
+                  variant="outline" 
+                  className="border-pickleball-purple text-pickleball-purple"
+                  onClick={() => document.getElementById('upcoming-games')?.scrollIntoView({ behavior: 'smooth' })}
+                >
                   View All
                 </Button>
               </CardContent>
@@ -116,7 +170,7 @@ const Dashboard = () => {
             </TabsList>
 
             {/* Upcoming Games Tab */}
-            <TabsContent value="upcoming">
+            <TabsContent value="upcoming" id="upcoming-games">
               <div className="mb-4 flex justify-between items-center">
                 <h2 className="text-xl font-semibold">Your Upcoming Games</h2>
               </div>
@@ -127,7 +181,7 @@ const Dashboard = () => {
                     <Card key={booking.id} className="overflow-hidden">
                       <div className="h-40 overflow-hidden">
                         <img
-                          src={booking.venue.imageUrl}
+                          src={booking.venue.imageUrl || "https://images.unsplash.com/photo-1627903258426-b8c5608419b4?q=80&w=1000&auto=format&fit=crop"}
                           alt={booking.venue.name}
                           className="w-full h-full object-cover"
                         />
@@ -157,8 +211,14 @@ const Dashboard = () => {
                             <span className="text-sm font-medium">
                               {booking.slot.currentPlayers}/{booking.slot.maxPlayers} Players
                             </span>
-                            <Button variant="outline" size="sm" className="border-red-500 text-red-500">
-                              Cancel
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="border-red-500 text-red-500"
+                              onClick={() => handleCancelBooking(booking.id)}
+                              disabled={isCancelling}
+                            >
+                              {isCancelling ? "Cancelling..." : "Cancel"}
                             </Button>
                           </div>
                         </div>
@@ -186,39 +246,47 @@ const Dashboard = () => {
                 <h2 className="text-xl font-semibold">Available Venues</h2>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {mockVenues.map((venue) => (
-                  <Card key={venue.id} className="overflow-hidden">
-                    <div className="h-40 overflow-hidden">
-                      <img
-                        src={venue.imageUrl}
-                        alt={venue.name}
-                        className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
-                      />
-                    </div>
-                    <CardHeader className="pb-2">
-                      <CardTitle>{venue.name}</CardTitle>
-                      <CardDescription>
-                        <div className="flex items-center mt-1">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          <span className="text-sm">{venue.city}, {venue.state}</span>
-                        </div>
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600 mb-4 line-clamp-2">{venue.description}</p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">{venue.courtCount} Courts</span>
-                        <Link to="/book-slot">
-                          <Button className="bg-pickleball-purple hover:bg-pickleball-purple/90">
-                            View Slots
-                          </Button>
-                        </Link>
+              {venues.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {venues.map((venue) => (
+                    <Card key={venue.id} className="overflow-hidden">
+                      <div className="h-40 overflow-hidden">
+                        <img
+                          src={venue.imageUrl || "https://images.unsplash.com/photo-1627903258426-b8c5608419b4?q=80&w=1000&auto=format&fit=crop"}
+                          alt={venue.name}
+                          className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
+                        />
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      <CardHeader className="pb-2">
+                        <CardTitle>{venue.name}</CardTitle>
+                        <CardDescription>
+                          <div className="flex items-center mt-1">
+                            <MapPin className="h-4 w-4 mr-1" />
+                            <span className="text-sm">{venue.city}, {venue.state}</span>
+                          </div>
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-gray-600 mb-4 line-clamp-2">{venue.description || "No description provided"}</p>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium">{venue.courtCount} Courts</span>
+                          <Link to="/book-slot">
+                            <Button className="bg-pickleball-purple hover:bg-pickleball-purple/90">
+                              View Slots
+                            </Button>
+                          </Link>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <p className="text-gray-600">No venues available yet.</p>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             {/* Today's Availability Tab */}
@@ -227,63 +295,63 @@ const Dashboard = () => {
                 <h2 className="text-xl font-semibold">Today's Available Slots</h2>
               </div>
 
-              {/* Get today's date */}
-              {(() => {
-                const today = new Date().toISOString().split('T')[0];
-                const todaySlots = mockSlots.filter(slot => slot.date === today);
+              {todaySlots.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {todaySlots.map((slot) => {
+                    const venue = venues.find(v => v.id === slot.venueId);
+                    const isFull = slot.currentPlayers >= slot.maxPlayers;
 
-                return todaySlots.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {todaySlots.map((slot) => {
-                      const venue = mockVenues.find(v => v.id === slot.venueId);
-                      return (
-                        <Card key={slot.id}>
-                          <CardHeader className="pb-2">
-                            <CardTitle>{venue?.name}</CardTitle>
-                            <CardDescription>
-                              <div className="flex items-center mt-1">
-                                <MapPin className="h-4 w-4 mr-1" />
-                                <span className="text-sm">{venue?.city}, {venue?.state}</span>
-                              </div>
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-2">
-                              <div className="flex items-center">
-                                <Clock className="h-4 w-4 mr-2 text-pickleball-purple" />
-                                <span>
-                                  {slot.startTime} - {slot.endTime}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center mt-4">
-                                <span className="text-sm font-medium">
-                                  {slot.currentPlayers}/{slot.maxPlayers} Players
-                                </span>
+                    return (
+                      <Card key={slot.id}>
+                        <CardHeader className="pb-2">
+                          <CardTitle>{venue?.name || "Unknown Venue"}</CardTitle>
+                          <CardDescription>
+                            <div className="flex items-center mt-1">
+                              <MapPin className="h-4 w-4 mr-1" />
+                              <span className="text-sm">{venue?.city}, {venue?.state}</span>
+                            </div>
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            <div className="flex items-center">
+                              <Clock className="h-4 w-4 mr-2 text-pickleball-purple" />
+                              <span>
+                                {slot.startTime} - {slot.endTime}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center mt-4">
+                              <span className="text-sm font-medium">
+                                {slot.currentPlayers}/{slot.maxPlayers} Players
+                              </span>
+                              {isFull ? (
+                                <span className="text-xs text-red-500 bg-red-50 px-3 py-1 rounded-full">Full</span>
+                              ) : (
                                 <Link to="/book-slot">
                                   <Button className="bg-pickleball-purple hover:bg-pickleball-purple/90">
                                     Book Now
                                   </Button>
                                 </Link>
-                              </div>
+                              )}
                             </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <Card>
-                    <CardContent className="p-6 text-center">
-                      <p className="text-gray-600 mb-4">No slots available for today.</p>
-                      <Link to="/book-slot">
-                        <Button className="bg-pickleball-purple hover:bg-pickleball-purple/90">
-                          Check Other Days
-                        </Button>
-                      </Link>
-                    </CardContent>
-                  </Card>
-                );
-              })()}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <p className="text-gray-600 mb-4">No slots available for today.</p>
+                    <Link to="/book-slot">
+                      <Button className="bg-pickleball-purple hover:bg-pickleball-purple/90">
+                        Check Other Days
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
           </Tabs>
         </div>

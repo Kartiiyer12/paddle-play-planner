@@ -11,52 +11,97 @@ import { CalendarIcon, Clock, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { User, Slot, Venue } from "@/models/types";
-import { mockSlots, mockVenues } from "@/data/mockData";
+import { Slot, Venue } from "@/models/types";
+import { getVenues } from "@/services/venueService";
+import { getSlotsByVenue } from "@/services/slotService";
+import { bookSlot } from "@/services/bookingService";
+import { useAuth } from "@/context/AuthContext";
 
 const BookSlot = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, isLoading: isLoadingAuth } = useAuth();
   const [selectedVenue, setSelectedVenue] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [availableSlots, setAvailableSlots] = useState<Slot[]>([]);
+  const [venues, setVenues] = useState<Venue[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isBooking, setIsBooking] = useState(false);
 
   useEffect(() => {
     // Check if user is logged in
-    const userData = localStorage.getItem("currentUser");
-    if (!userData) {
-      toast.error("You must be logged in to book slots");
-      navigate("/login");
-      return;
-    }
+    if (!isLoadingAuth) {
+      if (!user) {
+        toast.error("You must be logged in to book slots");
+        navigate("/login");
+        return;
+      }
 
-    // Parse user data
-    const parsedUser: User = JSON.parse(userData);
-    setUser(parsedUser);
-    setIsLoading(false);
-  }, [navigate]);
+      loadVenues();
+    }
+  }, [navigate, user, isLoadingAuth]);
+
+  const loadVenues = async () => {
+    setIsLoading(true);
+    try {
+      const data = await getVenues();
+      setVenues(data);
+      
+      // If we have venues, select the first one by default
+      if (data.length > 0 && !selectedVenue) {
+        setSelectedVenue(data[0].id);
+      }
+    } catch (error) {
+      toast.error("Failed to load venues");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (selectedVenue && selectedDate) {
-      // Filter slots by venue and date
-      const dateString = format(selectedDate, "yyyy-MM-dd");
-      const slots = mockSlots.filter(
-        (slot) => slot.venueId === selectedVenue && slot.date === dateString
-      );
-      setAvailableSlots(slots);
+      loadSlots();
     } else {
       setAvailableSlots([]);
     }
   }, [selectedVenue, selectedDate]);
 
-  const handleBookSlot = (slotId: string) => {
-    // In a real app, we would call the API to book the slot
-    toast.success("Slot booked successfully!");
-    navigate("/dashboard");
+  const loadSlots = async () => {
+    if (!selectedVenue || !selectedDate) return;
+    
+    try {
+      const dateString = format(selectedDate, "yyyy-MM-dd");
+      const data = await getSlotsByVenue(selectedVenue);
+      
+      // Filter slots by selected date
+      const filteredSlots = data.filter(slot => slot.date === dateString);
+      setAvailableSlots(filteredSlots);
+    } catch (error) {
+      toast.error("Failed to load available slots");
+    }
   };
 
-  if (isLoading) {
+  const handleBookSlot = async (slotId: string, venueId: string) => {
+    if (!user) {
+      toast.error("You must be logged in to book slots");
+      navigate("/login");
+      return;
+    }
+
+    setIsBooking(true);
+    try {
+      await bookSlot(slotId, venueId);
+      toast.success("Slot booked successfully!");
+      
+      // Refresh slots to update availability
+      loadSlots();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to book slot");
+    } finally {
+      setIsBooking(false);
+    }
+  };
+
+  if (isLoadingAuth || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>Loading...</p>
@@ -85,12 +130,12 @@ const BookSlot = () => {
                 {/* Venue Filter */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Select Venue</label>
-                  <Select onValueChange={setSelectedVenue}>
+                  <Select value={selectedVenue || ""} onValueChange={setSelectedVenue}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a venue" />
                     </SelectTrigger>
                     <SelectContent>
-                      {mockVenues.map((venue) => (
+                      {venues.map((venue) => (
                         <SelectItem key={venue.id} value={venue.id}>
                           {venue.name}
                         </SelectItem>
@@ -132,6 +177,7 @@ const BookSlot = () => {
                 <div className="flex items-end">
                   <Button 
                     className="w-full bg-pickleball-purple hover:bg-pickleball-purple/90"
+                    onClick={loadSlots}
                     disabled={!selectedVenue || !selectedDate}
                   >
                     Search Available Slots
@@ -149,7 +195,7 @@ const BookSlot = () => {
               availableSlots.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {availableSlots.map((slot) => {
-                    const venue = mockVenues.find((v) => v.id === slot.venueId);
+                    const venue = venues.find((v) => v.id === slot.venueId);
                     const isFull = slot.currentPlayers >= slot.maxPlayers;
 
                     return (
@@ -166,7 +212,7 @@ const BookSlot = () => {
                             <div className="flex items-center">
                               <CalendarIcon className="h-4 w-4 mr-2 text-pickleball-purple" />
                               <span className="text-sm text-gray-600">
-                                {selectedDate ? format(selectedDate, "EEEE, MMMM d") : ""}
+                                {selectedDate ? format(selectedDate, "EEEE, MMMM d") : ""} ({slot.dayOfWeek})
                               </span>
                             </div>
                             <div className="flex items-center">
@@ -189,11 +235,11 @@ const BookSlot = () => {
                               )}
                             </div>
                             <Button
-                              onClick={() => handleBookSlot(slot.id)}
-                              disabled={isFull}
+                              onClick={() => handleBookSlot(slot.id, slot.venueId)}
+                              disabled={isFull || isBooking}
                               className={isFull ? "bg-gray-300" : "bg-pickleball-purple hover:bg-pickleball-purple/90"}
                             >
-                              Book Slot
+                              {isBooking ? "Booking..." : "Book Slot"}
                             </Button>
                           </div>
                         </CardContent>

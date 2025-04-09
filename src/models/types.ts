@@ -18,17 +18,21 @@ export interface Venue {
   description: string;
   courtCount: number;
   imageUrl: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Slot {
   id: string;
   venueId: string;
   date: string;
+  dayOfWeek: string;
   startTime: string;
   endTime: string;
   maxPlayers: number;
   currentPlayers: number;
-  createdAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Booking {

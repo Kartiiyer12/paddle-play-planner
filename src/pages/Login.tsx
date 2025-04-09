@@ -8,10 +8,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { supabase } from "@/integrations/supabase/client";
+import { loginUser } from "@/services/authService";
+import { useAuth } from "@/context/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { setUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -21,23 +23,19 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      // Sign in with Supabase
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) {
-        throw error;
+      const user = await loginUser(email, password);
+      
+      if (user) {
+        setUser(user);
+        toast.success("Login successful!");
+        
+        // Redirect based on role
+        if (user.role === 'admin') {
+          navigate("/admin");
+        } else {
+          navigate("/dashboard");
+        }
       }
-
-      // Success, show message and redirect
-      toast.success("Login successful!");
-      
-      // Check if user is admin (in a real app, you'd check a role in the database)
-      // For now we'll assume all users are regular users
-      navigate("/dashboard");
-      
     } catch (error: any) {
       console.error("Login error:", error);
       toast.error(error.message || "Invalid email or password. Please try again.");
