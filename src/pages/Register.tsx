@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { supabase } from "@/integrations/supabase/client";
+import { registerUser } from "@/services/authService";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -17,10 +17,12 @@ const Register = () => {
     name: "",
     email: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
+    adminCode: ""
   });
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showAdminField, setShowAdminField] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -45,20 +47,11 @@ const Register = () => {
     }
 
     try {
-      // Register the user with Supabase
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            full_name: formData.name,
-          }
-        }
-      });
-
-      if (error) {
-        throw error;
-      }
+      // Check if admin code is correct (this is a simple implementation)
+      const isAdmin = showAdminField && formData.adminCode === "ADMIN123";
+      
+      // Register the user with the appropriate role
+      await registerUser(formData.email, formData.password, formData.name, isAdmin ? 'admin' : 'user');
 
       // Success, show a message and redirect
       toast.success("Registration successful! Please check your email to verify your account.");
@@ -137,6 +130,33 @@ const Register = () => {
                     required
                   />
                 </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="adminRegister"
+                    checked={showAdminField}
+                    onCheckedChange={(checked) => setShowAdminField(checked as boolean)}
+                  />
+                  <Label htmlFor="adminRegister" className="text-sm text-gray-600">
+                    Register as admin
+                  </Label>
+                </div>
+                
+                {showAdminField && (
+                  <div className="space-y-2">
+                    <Label htmlFor="adminCode">Admin Code</Label>
+                    <Input
+                      id="adminCode"
+                      name="adminCode"
+                      type="password"
+                      placeholder="Enter admin code"
+                      value={formData.adminCode}
+                      onChange={handleChange}
+                    />
+                    <p className="text-xs text-gray-500">For testing, use code: ADMIN123</p>
+                  </div>
+                )}
+                
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="terms"

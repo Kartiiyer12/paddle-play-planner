@@ -1,11 +1,28 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { logoutUser } from "@/services/authService";
+import { toast } from "sonner";
 
 const Navbar = ({ isLoggedIn = false }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+  const { user, setUser } = useAuth();
+  
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      setUser(null);
+      toast.success("Logged out successfully");
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Failed to logout. Please try again.");
+    }
+  };
 
   return (
     <nav className="bg-white border-b border-gray-200 px-4 py-3 fixed w-full top-0 z-50">
@@ -32,7 +49,15 @@ const Navbar = ({ isLoggedIn = false }) => {
               <Link to="/dashboard" className="text-gray-700 hover:text-pickleball-purple">
                 Dashboard
               </Link>
-              <Button className="bg-pickleball-purple hover:bg-pickleball-purple/90">
+              {user?.role === 'admin' && (
+                <Link to="/admin" className="text-gray-700 hover:text-pickleball-purple">
+                  Admin Panel
+                </Link>
+              )}
+              <Button 
+                className="bg-pickleball-purple hover:bg-pickleball-purple/90"
+                onClick={handleLogout}
+              >
                 Logout
               </Button>
             </>
@@ -99,9 +124,21 @@ const Navbar = ({ isLoggedIn = false }) => {
                 >
                   Dashboard
                 </Link>
+                {user?.role === 'admin' && (
+                  <Link 
+                    to="/admin" 
+                    className="text-gray-700 hover:text-pickleball-purple"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Admin Panel
+                  </Link>
+                )}
                 <Button
                   className="bg-pickleball-purple hover:bg-pickleball-purple/90 w-full"
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => {
+                    handleLogout();
+                    setIsOpen(false);
+                  }}
                 >
                   Logout
                 </Button>
