@@ -74,6 +74,9 @@ const createMockSlots = () => {
       const date = new Date(startDate);
       date.setDate(date.getDate() + day);
       const dateString = date.toISOString().split('T')[0];
+      const dayOfWeekNumber = date.getDay();
+      const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const dayOfWeek = daysOfWeek[dayOfWeekNumber];
       
       // Create 4 time slots for each day
       const times = [
@@ -88,6 +91,7 @@ const createMockSlots = () => {
           id: `${venueId}-${day}-${timeIndex}`,
           venueId: venueId.toString(),
           date: dateString,
+          dayOfWeek: dayOfWeek,
           startTime: time.start,
           endTime: time.end,
           maxPlayers: 16,

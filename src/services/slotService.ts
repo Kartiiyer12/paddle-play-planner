@@ -13,7 +13,18 @@ export const getSlots = async () => {
     throw error;
   }
   
-  return data as Slot[];
+  return data.map(slot => ({
+    id: slot.id,
+    venueId: slot.venue_id,
+    date: slot.date,
+    dayOfWeek: slot.day_of_week,
+    startTime: slot.start_time,
+    endTime: slot.end_time,
+    maxPlayers: slot.max_players,
+    currentPlayers: slot.current_players,
+    createdAt: slot.created_at,
+    updatedAt: slot.updated_at
+  })) as Slot[];
 };
 
 export const getSlotsByVenue = async (venueId: string) => {
@@ -28,7 +39,18 @@ export const getSlotsByVenue = async (venueId: string) => {
     throw error;
   }
   
-  return data as Slot[];
+  return data.map(slot => ({
+    id: slot.id,
+    venueId: slot.venue_id,
+    date: slot.date,
+    dayOfWeek: slot.day_of_week,
+    startTime: slot.start_time,
+    endTime: slot.end_time,
+    maxPlayers: slot.max_players,
+    currentPlayers: slot.current_players,
+    createdAt: slot.created_at,
+    updatedAt: slot.updated_at
+  })) as Slot[];
 };
 
 export const getSlotsByDate = async (date: string) => {
@@ -42,7 +64,18 @@ export const getSlotsByDate = async (date: string) => {
     throw error;
   }
   
-  return data as Slot[];
+  return data.map(slot => ({
+    id: slot.id,
+    venueId: slot.venue_id,
+    date: slot.date,
+    dayOfWeek: slot.day_of_week,
+    startTime: slot.start_time,
+    endTime: slot.end_time,
+    maxPlayers: slot.max_players,
+    currentPlayers: slot.current_players,
+    createdAt: slot.created_at,
+    updatedAt: slot.updated_at
+  })) as Slot[];
 };
 
 export const getSlotById = async (id: string) => {
@@ -56,7 +89,18 @@ export const getSlotById = async (id: string) => {
     throw error;
   }
   
-  return data as Slot;
+  return {
+    id: data.id,
+    venueId: data.venue_id,
+    date: data.date,
+    dayOfWeek: data.day_of_week,
+    startTime: data.start_time,
+    endTime: data.end_time,
+    maxPlayers: data.max_players,
+    currentPlayers: data.current_players,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  } as Slot;
 };
 
 export const createSlot = async (slot: Omit<Slot, "id" | "createdAt" | "currentPlayers" | "dayOfWeek">) => {
@@ -75,7 +119,18 @@ export const createSlot = async (slot: Omit<Slot, "id" | "createdAt" | "currentP
     throw error;
   }
   
-  return data[0] as Slot;
+  return {
+    id: data[0].id,
+    venueId: data[0].venue_id,
+    date: data[0].date,
+    dayOfWeek: data[0].day_of_week,
+    startTime: data[0].start_time,
+    endTime: data[0].end_time,
+    maxPlayers: data[0].max_players,
+    currentPlayers: data[0].current_players,
+    createdAt: data[0].created_at,
+    updatedAt: data[0].updated_at
+  } as Slot;
 };
 
 export const updateSlot = async (id: string, slot: Partial<Omit<Slot, "id" | "createdAt" | "dayOfWeek">>) => {
@@ -98,7 +153,18 @@ export const updateSlot = async (id: string, slot: Partial<Omit<Slot, "id" | "cr
     throw error;
   }
   
-  return data[0] as Slot;
+  return {
+    id: data[0].id,
+    venueId: data[0].venue_id,
+    date: data[0].date,
+    dayOfWeek: data[0].day_of_week,
+    startTime: data[0].start_time,
+    endTime: data[0].end_time,
+    maxPlayers: data[0].max_players,
+    currentPlayers: data[0].current_players,
+    createdAt: data[0].created_at,
+    updatedAt: data[0].updated_at
+  } as Slot;
 };
 
 export const deleteSlot = async (id: string) => {

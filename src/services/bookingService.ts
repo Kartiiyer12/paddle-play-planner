@@ -13,8 +13,8 @@ export const getUserBookings = async () => {
     .from("bookings")
     .select(`
       *,
-      slots (*),
-      venues (*)
+      venues:venue_id (*),
+      slots:slot_id (*)
     `)
     .eq("user_id", userData.user.id)
     .eq("status", "confirmed")
