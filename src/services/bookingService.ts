@@ -59,6 +59,68 @@ export const getUserBookings = async () => {
   })) as BookingWithDetails[];
 };
 
+export const getAllBookings = async () => {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  
+  if (userError || !userData.user) {
+    throw userError || new Error("User not authenticated");
+  }
+  
+  // Check if user is admin
+  const isAdmin = userData.user.user_metadata?.role === 'admin';
+  
+  if (!isAdmin) {
+    throw new Error("Only admins can access all bookings");
+  }
+
+  const { data, error } = await supabase
+    .from("bookings")
+    .select(`
+      *,
+      venues:venue_id (*),
+      slots:slot_id (*)
+    `)
+    .order("created_at", { ascending: false });
+  
+  if (error) {
+    throw error;
+  }
+  
+  return data.map(booking => ({
+    id: booking.id,
+    userId: booking.user_id,
+    slotId: booking.slot_id,
+    venueId: booking.venue_id,
+    status: booking.status,
+    createdAt: booking.created_at,
+    venue: {
+      id: booking.venues.id,
+      name: booking.venues.name,
+      address: booking.venues.address,
+      city: booking.venues.city,
+      state: booking.venues.state,
+      zip: booking.venues.zip || '',
+      description: booking.venues.description || '',
+      courtCount: booking.venues.court_count,
+      imageUrl: booking.venues.image_url || '',
+      createdAt: booking.venues.created_at,
+      updatedAt: booking.venues.updated_at
+    },
+    slot: {
+      id: booking.slots.id,
+      venueId: booking.slots.venue_id,
+      date: booking.slots.date,
+      dayOfWeek: booking.slots.day_of_week || '',
+      startTime: booking.slots.start_time,
+      endTime: booking.slots.end_time,
+      maxPlayers: booking.slots.max_players,
+      currentPlayers: booking.slots.current_players,
+      createdAt: booking.slots.created_at,
+      updatedAt: booking.slots.updated_at
+    }
+  })) as BookingWithDetails[];
+};
+
 export const bookSlot = async (slotId: string, venueId: string) => {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   
@@ -91,6 +153,28 @@ export const bookSlot = async (slotId: string, venueId: string) => {
 };
 
 export const cancelBooking = async (bookingId: string) => {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  
+  if (userError || !userData.user) {
+    throw userError || new Error("User not authenticated");
+  }
+  
+  // First check if the booking belongs to the user or if user is admin
+  const isAdmin = userData.user.user_metadata?.role === 'admin';
+  
+  if (!isAdmin) {
+    // If not admin, verify the booking belongs to the user
+    const { data: bookingData, error: bookingError } = await supabase
+      .from("bookings")
+      .select("user_id")
+      .eq("id", bookingId)
+      .single();
+    
+    if (bookingError || !bookingData || bookingData.user_id !== userData.user.id) {
+      throw new Error("You can only cancel your own bookings");
+    }
+  }
+
   const { error } = await supabase
     .from("bookings")
     .delete()
@@ -101,4 +185,32 @@ export const cancelBooking = async (bookingId: string) => {
   }
   
   return true;
+};
+
+export const updateBookingStatus = async (bookingId: string, status: 'confirmed' | 'cancelled') => {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  
+  if (userError || !userData.user) {
+    throw userError || new Error("User not authenticated");
+  }
+  
+  // Check if user is admin
+  const isAdmin = userData.user.user_metadata?.role === 'admin';
+  
+  if (!isAdmin) {
+    // Only admins can change status other than cancellation
+    throw new Error("Only admins can update booking status");
+  }
+  
+  const { data, error } = await supabase
+    .from("bookings")
+    .update({ status })
+    .eq("id", bookingId)
+    .select();
+  
+  if (error) {
+    throw error;
+  }
+  
+  return data[0] as Booking;
 };

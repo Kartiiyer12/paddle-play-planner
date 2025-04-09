@@ -44,7 +44,7 @@ const Navbar = ({ isLoggedIn = false }) => {
           <Link to="/#venues" className="text-gray-700 hover:text-pickleball-purple">
             Venues
           </Link>
-          {isLoggedIn ? (
+          {user ? (
             <>
               <Link to="/dashboard" className="text-gray-700 hover:text-pickleball-purple">
                 Dashboard
@@ -115,7 +115,7 @@ const Navbar = ({ isLoggedIn = false }) => {
             >
               Venues
             </Link>
-            {isLoggedIn ? (
+            {user ? (
               <>
                 <Link
                   to="/dashboard"
