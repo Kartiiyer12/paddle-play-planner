@@ -7,7 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { logoutUser } from "@/services/authService";
 import { toast } from "sonner";
 
-const Navbar = ({ isLoggedIn = false }) => {
+const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const { user, setUser } = useAuth();

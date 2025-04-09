@@ -212,5 +212,13 @@ export const updateBookingStatus = async (bookingId: string, status: 'confirmed'
     throw error;
   }
   
-  return data[0] as Booking;
+  // Fix the type conversion error
+  return {
+    id: data[0].id,
+    userId: data[0].user_id,
+    slotId: data[0].slot_id,
+    venueId: data[0].venue_id,
+    status: data[0].status,
+    createdAt: data[0].created_at
+  } as Booking;
 };
