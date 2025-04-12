@@ -51,6 +51,39 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          age: number | null
+          created_at: string | null
+          id: string
+          name: string | null
+          preferred_venues: string[] | null
+          sex: string | null
+          skill_level: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          age?: number | null
+          created_at?: string | null
+          id: string
+          name?: string | null
+          preferred_venues?: string[] | null
+          sex?: string | null
+          skill_level?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          age?: number | null
+          created_at?: string | null
+          id?: string
+          name?: string | null
+          preferred_venues?: string[] | null
+          sex?: string | null
+          skill_level?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       slots: {
         Row: {
           created_at: string
