@@ -3,11 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarIcon, Clock, MapPin, Coins } from "lucide-react";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -17,6 +13,12 @@ import { getVenues } from "@/services/venueService";
 import { getSlotsByVenue } from "@/services/slotService";
 import { bookSlot } from "@/services/bookingService";
 import { useAuth } from "@/context/AuthContext";
+
+// Import refactored components
+import VenueSelector from "@/components/booking/VenueSelector";
+import DateSelector from "@/components/booking/DateSelector";
+import SlotCoinsDisplay from "@/components/booking/SlotCoinsDisplay";
+import AvailableSlots from "@/components/booking/AvailableSlots";
 
 const BookSlot = () => {
   const navigate = useNavigate();
@@ -131,72 +133,23 @@ const BookSlot = () => {
             </p>
           </div>
 
-          <Card className="mb-6">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="font-medium text-gray-900">Your Slot Coins</h3>
-                  <div className="flex items-center mt-1">
-                    <Coins className="h-5 w-5 text-pickleball-purple mr-2" />
-                    <p className="text-xl font-bold text-pickleball-purple">{slotCoins} Coins</p>
-                  </div>
-                </div>
-                <Button 
-                  className="bg-pickleball-purple hover:bg-pickleball-purple/90"
-                  onClick={() => navigate("/payment")}
-                >
-                  Buy More
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <SlotCoinsDisplay slotCoins={slotCoins} />
 
           <Card className="mb-8">
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Select Venue</label>
-                  <Select value={selectedVenue || ""} onValueChange={setSelectedVenue}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a venue" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {venues.map((venue) => (
-                        <SelectItem key={venue.id} value={venue.id}>
-                          {venue.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <VenueSelector
+                  venues={venues}
+                  selectedVenue={selectedVenue}
+                  onVenueChange={setSelectedVenue}
+                  isLoading={isLoading}
+                />
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Select Date</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {selectedDate ? (
-                          format(selectedDate, "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={setSelectedDate}
-                        initialFocus
-                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
+                <DateSelector
+                  selectedDate={selectedDate}
+                  onDateChange={setSelectedDate}
+                  isLoading={isLoading}
+                />
 
                 <div className="flex items-end">
                   <Button 
@@ -211,95 +164,15 @@ const BookSlot = () => {
             </CardContent>
           </Card>
 
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">Available Slots</h2>
-
-            {selectedVenue && selectedDate ? (
-              availableSlots.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {availableSlots.map((slot) => {
-                    const venue = venues.find((v) => v.id === slot.venueId);
-                    const isFull = slot.currentPlayers >= slot.maxPlayers;
-
-                    return (
-                      <Card key={slot.id}>
-                        <CardContent className="p-6">
-                          <h3 className="font-semibold text-lg mb-2">{venue?.name}</h3>
-                          <div className="space-y-3 mb-4">
-                            <div className="flex items-center">
-                              <MapPin className="h-4 w-4 mr-2 text-pickleball-purple" />
-                              <span className="text-sm text-gray-600">
-                                {venue?.city}, {venue?.state}
-                              </span>
-                            </div>
-                            <div className="flex items-center">
-                              <CalendarIcon className="h-4 w-4 mr-2 text-pickleball-purple" />
-                              <span className="text-sm text-gray-600">
-                                {selectedDate ? format(selectedDate, "EEEE, MMMM d") : ""} ({slot.dayOfWeek})
-                              </span>
-                            </div>
-                            <div className="flex items-center">
-                              <Clock className="h-4 w-4 mr-2 text-pickleball-purple" />
-                              <span className="text-sm text-gray-600">
-                                {slot.startTime} - {slot.endTime}
-                              </span>
-                            </div>
-                            <div className="flex items-center">
-                              <Coins className="h-4 w-4 mr-2 text-pickleball-purple" />
-                              <span className="text-sm text-gray-600">
-                                1 Slot Coin
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <span className="text-sm font-medium">
-                                {slot.currentPlayers}/{slot.maxPlayers} Players
-                              </span>
-                              {isFull && (
-                                <span className="ml-2 text-xs text-red-500 bg-red-50 px-2 py-1 rounded-full">
-                                  Full
-                                </span>
-                              )}
-                            </div>
-                            <Button
-                              onClick={() => handleBookSlot(slot.id, slot.venueId)}
-                              disabled={isFull || isBooking || slotCoins <= 0}
-                              className={
-                                isFull 
-                                  ? "bg-gray-300" 
-                                  : slotCoins <= 0 
-                                    ? "bg-gray-300" 
-                                    : "bg-pickleball-purple hover:bg-pickleball-purple/90"
-                              }
-                            >
-                              {isBooking ? "Booking..." : slotCoins <= 0 ? "Need Coins" : "Book Slot"}
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              ) : (
-                <Card>
-                  <CardContent className="p-6 text-center">
-                    <p className="text-gray-600 mb-4">No slots available for the selected venue and date.</p>
-                    <p className="text-gray-600">Please try a different combination.</p>
-                  </CardContent>
-                </Card>
-              )
-            ) : (
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <p className="text-gray-600">
-                    Select a venue and date to see available slots
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+          <AvailableSlots
+            availableSlots={availableSlots}
+            venues={venues}
+            selectedVenue={selectedVenue}
+            selectedDate={selectedDate}
+            onBookSlot={handleBookSlot}
+            isBooking={isBooking}
+            slotCoins={slotCoins}
+          />
         </div>
       </div>
 
