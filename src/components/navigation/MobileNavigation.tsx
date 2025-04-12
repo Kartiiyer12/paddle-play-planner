@@ -25,6 +25,16 @@ const MobileNavigation = () => {
     }
   };
 
+  const handleBookNow = () => {
+    if (user) {
+      navigate("/book-slot");
+      setIsOpen(false);
+    } else {
+      navigate("/login");
+      setIsOpen(false);
+    }
+  };
+
   return (
     <div className="md:hidden">
       <Button
@@ -46,20 +56,6 @@ const MobileNavigation = () => {
               onClick={() => setIsOpen(false)}
             >
               Home
-            </Link>
-            <Link
-              to="/#how-it-works"
-              className="text-gray-700 hover:text-pickleball-purple"
-              onClick={() => setIsOpen(false)}
-            >
-              How It Works
-            </Link>
-            <Link
-              to="/#venues"
-              className="text-gray-700 hover:text-pickleball-purple"
-              onClick={() => setIsOpen(false)}
-            >
-              Venues
             </Link>
             {user ? (
               <>
@@ -91,19 +87,18 @@ const MobileNavigation = () => {
               </>
             ) : (
               <>
+                <Button
+                  className="bg-pickleball-purple hover:bg-pickleball-purple/90 w-full"
+                  onClick={handleBookNow}
+                >
+                  Book Now
+                </Button>
                 <Link to="/login" onClick={() => setIsOpen(false)} className="w-full">
                   <Button
                     variant="outline"
                     className="border-pickleball-purple text-pickleball-purple w-full"
                   >
                     Login
-                  </Button>
-                </Link>
-                <Link to="/register" onClick={() => setIsOpen(false)} className="w-full">
-                  <Button
-                    className="bg-pickleball-purple hover:bg-pickleball-purple/90 w-full"
-                  >
-                    Sign Up
                   </Button>
                 </Link>
               </>

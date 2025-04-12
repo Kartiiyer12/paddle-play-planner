@@ -22,16 +22,18 @@ const DesktopNavigation = () => {
     }
   };
 
+  const handleBookNow = () => {
+    if (user) {
+      navigate("/book-slot");
+    } else {
+      navigate("/login");
+    }
+  };
+
   return (
     <div className="hidden md:flex items-center space-x-6">
       <Link to="/" className="text-gray-700 hover:text-pickleball-purple">
         Home
-      </Link>
-      <Link to="/#how-it-works" className="text-gray-700 hover:text-pickleball-purple">
-        How It Works
-      </Link>
-      <Link to="/#venues" className="text-gray-700 hover:text-pickleball-purple">
-        Venues
       </Link>
       {user ? (
         <>
@@ -52,14 +54,15 @@ const DesktopNavigation = () => {
         </>
       ) : (
         <>
+          <Button 
+            onClick={handleBookNow}
+            className="bg-pickleball-purple hover:bg-pickleball-purple/90"
+          >
+            Book Now
+          </Button>
           <Link to="/login">
             <Button variant="outline" className="border-pickleball-purple text-pickleball-purple">
               Login
-            </Button>
-          </Link>
-          <Link to="/register">
-            <Button className="bg-pickleball-purple hover:bg-pickleball-purple/90">
-              Sign Up
             </Button>
           </Link>
         </>
