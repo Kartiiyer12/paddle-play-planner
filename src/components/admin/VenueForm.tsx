@@ -23,7 +23,7 @@ const VenueForm = ({ venue, onSuccess }: VenueFormProps) => {
     zip: venue?.zip || "",
     description: venue?.description || "",
     courtCount: venue?.courtCount || 1,
-    imageUrl: venue?.imageUrl || "https://images.unsplash.com/photo-1627903258426-b8c5608419b4?q=80&w=1000&auto=format&fit=crop"
+    imageUrl: venue?.imageUrl || "/lovable-uploads/021553a3-f52a-4d73-b0f9-75f2a94711cb.png"
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -60,7 +60,7 @@ const VenueForm = ({ venue, onSuccess }: VenueFormProps) => {
           zip: "",
           description: "",
           courtCount: 1,
-          imageUrl: "https://images.unsplash.com/photo-1627903258426-b8c5608419b4?q=80&w=1000&auto=format&fit=crop"
+          imageUrl: "/lovable-uploads/021553a3-f52a-4d73-b0f9-75f2a94711cb.png"
         });
       }
       
@@ -108,7 +108,7 @@ const VenueForm = ({ venue, onSuccess }: VenueFormProps) => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="state">State*</Label>
+              <Label htmlFor="state">County*</Label>
               <Input
                 id="state"
                 name="state"
@@ -118,7 +118,7 @@ const VenueForm = ({ venue, onSuccess }: VenueFormProps) => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="zip">ZIP Code</Label>
+              <Label htmlFor="zip">Eircode</Label>
               <Input
                 id="zip"
                 name="zip"
@@ -155,7 +155,21 @@ const VenueForm = ({ venue, onSuccess }: VenueFormProps) => {
                 name="imageUrl"
                 value={formData.imageUrl}
                 onChange={handleChange}
+                placeholder="Leave empty to use default image"
               />
+              {formData.imageUrl && (
+                <div className="mt-2">
+                  <img 
+                    src={formData.imageUrl} 
+                    alt="Venue preview" 
+                    className="h-40 w-full object-cover rounded-md"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = "/lovable-uploads/021553a3-f52a-4d73-b0f9-75f2a94711cb.png";
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
 

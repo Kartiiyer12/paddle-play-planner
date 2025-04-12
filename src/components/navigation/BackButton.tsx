@@ -7,12 +7,18 @@ type BackButtonProps = {
   to?: string;
   label?: string;
   className?: string;
+  onClick?: () => void;
 };
 
-const BackButton = ({ to, label = "Back", className = "" }: BackButtonProps) => {
+const BackButton = ({ to, label = "Back", className = "", onClick }: BackButtonProps) => {
   const navigate = useNavigate();
   
   const handleBack = () => {
+    if (onClick) {
+      onClick();
+      return;
+    }
+    
     if (to) {
       navigate(to);
     } else {

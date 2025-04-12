@@ -6,7 +6,9 @@ import {
   MapPin, 
   Calendar, 
   CreditCard,
-  Settings
+  Settings,
+  Euro,
+  Tag
 } from "lucide-react";
 
 const AdminNavigation = () => {
@@ -37,6 +39,11 @@ const AdminNavigation = () => {
       icon: <CreditCard className="h-5 w-5 mr-2" />
     },
     {
+      label: "Slot Configuration",
+      path: "/admin/slot-config",
+      icon: <Tag className="h-5 w-5 mr-2" />
+    },
+    {
       label: "Settings",
       path: "/admin/settings",
       icon: <Settings className="h-5 w-5 mr-2" />
@@ -44,7 +51,7 @@ const AdminNavigation = () => {
   ];
 
   return (
-    <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 mb-6">
+    <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 mb-6 overflow-x-auto whitespace-nowrap pb-2">
       {navItems.map((item) => (
         <Button
           key={item.path}

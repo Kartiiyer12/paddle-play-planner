@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -36,6 +36,11 @@ const App = () => {
               <Route path="/book-slot" element={<BookSlot />} />
               <Route path="/payment" element={<Payment />} />
               <Route path="/admin" element={<AdminPanel />} />
+              <Route path="/admin/users" element={<AdminPanel />} />
+              <Route path="/admin/venues" element={<AdminPanel />} />
+              <Route path="/admin/slots" element={<AdminPanel />} />
+              <Route path="/admin/payments" element={<AdminPanel />} />
+              <Route path="/admin/settings" element={<AdminPanel />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
