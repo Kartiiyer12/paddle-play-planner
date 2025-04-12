@@ -37,8 +37,11 @@ const DesktopNavigation = () => {
       </Link>
       {user ? (
         <>
-          <Link to="/dashboard" className="text-gray-700 hover:text-pickleball-purple">
-            Dashboard
+          <Link to="/my-bookings" className="text-gray-700 hover:text-pickleball-purple">
+            My Bookings
+          </Link>
+          <Link to="/profile" className="text-gray-700 hover:text-pickleball-purple">
+            My Profile
           </Link>
           {user?.role === 'admin' && (
             <Link to="/admin" className="text-gray-700 hover:text-pickleball-purple">
@@ -53,19 +56,12 @@ const DesktopNavigation = () => {
           </Button>
         </>
       ) : (
-        <>
-          <Button 
-            onClick={handleBookNow}
-            className="bg-pickleball-purple hover:bg-pickleball-purple/90"
-          >
-            Book Now
-          </Button>
-          <Link to="/login">
-            <Button variant="outline" className="border-pickleball-purple text-pickleball-purple">
-              Login
-            </Button>
-          </Link>
-        </>
+        <Button 
+          onClick={handleBookNow}
+          className="bg-pickleball-purple hover:bg-pickleball-purple/90"
+        >
+          Book Now
+        </Button>
       )}
     </div>
   );

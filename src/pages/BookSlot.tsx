@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,10 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarIcon, Clock, MapPin } from "lucide-react";
+import { CalendarIcon, Clock, MapPin, Coins } from "lucide-react";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import BackButton from "@/components/navigation/BackButton";
 import { Slot, Venue } from "@/models/types";
 import { getVenues } from "@/services/venueService";
 import { getSlotsByVenue } from "@/services/slotService";
@@ -25,6 +27,7 @@ const BookSlot = () => {
   const [venues, setVenues] = useState<Venue[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isBooking, setIsBooking] = useState(false);
+  const [slotCoins, setSlotCoins] = useState(5); // Mock slot coins for now
 
   useEffect(() => {
     if (!isLoadingAuth) {
@@ -83,10 +86,20 @@ const BookSlot = () => {
       return;
     }
 
+    // Check if user has enough slot coins
+    if (slotCoins <= 0) {
+      toast.error("You don't have enough slot coins");
+      navigate("/payment");
+      return;
+    }
+
     setIsBooking(true);
     try {
       await bookSlot(slotId, venueId);
       toast.success("Slot booked successfully!");
+      
+      // Mock decreasing slot coins
+      setSlotCoins(prev => prev - 1);
       
       loadSlots();
     } catch (error: any) {
@@ -110,12 +123,33 @@ const BookSlot = () => {
 
       <div className="flex-grow pt-24 pb-16 px-4 bg-gray-50">
         <div className="container mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Book a Slot</h1>
+          <div className="mb-6">
+            <BackButton to="/" />
+            <h1 className="text-3xl font-bold text-gray-900 mt-4">Book a Slot</h1>
             <p className="text-gray-600 mt-2">
               Find and book available pickleball slots at your preferred venue and time
             </p>
           </div>
+
+          <Card className="mb-6">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-medium text-gray-900">Your Slot Coins</h3>
+                  <div className="flex items-center mt-1">
+                    <Coins className="h-5 w-5 text-pickleball-purple mr-2" />
+                    <p className="text-xl font-bold text-pickleball-purple">{slotCoins} Coins</p>
+                  </div>
+                </div>
+                <Button 
+                  className="bg-pickleball-purple hover:bg-pickleball-purple/90"
+                  onClick={() => navigate("/payment")}
+                >
+                  Buy More
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
           <Card className="mb-8">
             <CardContent className="p-6">
@@ -210,6 +244,12 @@ const BookSlot = () => {
                                 {slot.startTime} - {slot.endTime}
                               </span>
                             </div>
+                            <div className="flex items-center">
+                              <Coins className="h-4 w-4 mr-2 text-pickleball-purple" />
+                              <span className="text-sm text-gray-600">
+                                1 Slot Coin
+                              </span>
+                            </div>
                           </div>
 
                           <div className="flex justify-between items-center">
@@ -225,10 +265,16 @@ const BookSlot = () => {
                             </div>
                             <Button
                               onClick={() => handleBookSlot(slot.id, slot.venueId)}
-                              disabled={isFull || isBooking}
-                              className={isFull ? "bg-gray-300" : "bg-pickleball-purple hover:bg-pickleball-purple/90"}
+                              disabled={isFull || isBooking || slotCoins <= 0}
+                              className={
+                                isFull 
+                                  ? "bg-gray-300" 
+                                  : slotCoins <= 0 
+                                    ? "bg-gray-300" 
+                                    : "bg-pickleball-purple hover:bg-pickleball-purple/90"
+                              }
                             >
-                              {isBooking ? "Booking..." : "Book Slot"}
+                              {isBooking ? "Booking..." : slotCoins <= 0 ? "Need Coins" : "Book Slot"}
                             </Button>
                           </div>
                         </CardContent>

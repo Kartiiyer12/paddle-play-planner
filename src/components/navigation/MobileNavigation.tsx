@@ -60,11 +60,18 @@ const MobileNavigation = () => {
             {user ? (
               <>
                 <Link
-                  to="/dashboard"
+                  to="/my-bookings"
                   className="text-gray-700 hover:text-pickleball-purple"
                   onClick={() => setIsOpen(false)}
                 >
-                  Dashboard
+                  My Bookings
+                </Link>
+                <Link
+                  to="/profile"
+                  className="text-gray-700 hover:text-pickleball-purple"
+                  onClick={() => setIsOpen(false)}
+                >
+                  My Profile
                 </Link>
                 {user?.role === 'admin' && (
                   <Link 
@@ -86,22 +93,12 @@ const MobileNavigation = () => {
                 </Button>
               </>
             ) : (
-              <>
-                <Button
-                  className="bg-pickleball-purple hover:bg-pickleball-purple/90 w-full"
-                  onClick={handleBookNow}
-                >
-                  Book Now
-                </Button>
-                <Link to="/login" onClick={() => setIsOpen(false)} className="w-full">
-                  <Button
-                    variant="outline"
-                    className="border-pickleball-purple text-pickleball-purple w-full"
-                  >
-                    Login
-                  </Button>
-                </Link>
-              </>
+              <Button
+                className="bg-pickleball-purple hover:bg-pickleball-purple/90 w-full"
+                onClick={handleBookNow}
+              >
+                Book Now
+              </Button>
             )}
           </div>
         </div>

@@ -7,12 +7,14 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
 import BookSlot from "./pages/BookSlot";
 import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
 import { useState } from "react";
 import { AuthProvider } from "./context/AuthContext";
+import Profile from "./pages/Profile";
+import MyBookings from "./pages/MyBookings";
+import Payment from "./pages/Payment";
 
 const App = () => {
   // Move queryClient creation inside the component
@@ -29,8 +31,10 @@ const App = () => {
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/my-bookings" element={<MyBookings />} />
               <Route path="/book-slot" element={<BookSlot />} />
+              <Route path="/payment" element={<Payment />} />
               <Route path="/admin" element={<AdminPanel />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
