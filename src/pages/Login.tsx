@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -24,10 +25,17 @@ const Login = () => {
     setError("");
     
     try {
-      await loginUser(email, password);
-      toast.success("Login successful!");
-      navigate("/my-bookings");
+      const user = await loginUser(email, password);
+      
+      if (user) {
+        setUser(user);
+        toast.success("Login successful!");
+        navigate("/book-slot");
+      } else {
+        throw new Error("Login failed. Please try again.");
+      }
     } catch (error: any) {
+      console.error("Login error:", error);
       toast.error("Login failed");
       setError(error.message || "Failed to login");
     } finally {
@@ -79,6 +87,11 @@ const Login = () => {
                     required
                   />
                 </div>
+                {error && (
+                  <div className="text-sm text-red-500 mt-2">
+                    {error}
+                  </div>
+                )}
               </CardContent>
               <CardFooter className="flex flex-col space-y-4">
                 <Button

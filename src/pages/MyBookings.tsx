@@ -18,7 +18,6 @@ const MyBookings = () => {
   const [bookings, setBookings] = useState<BookingWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
-  const [slotCoins, setSlotCoins] = useState(5); // Mock slot coins for now
 
   useEffect(() => {
     if (!isLoadingAuth) {
@@ -50,10 +49,7 @@ const MyBookings = () => {
     setIsCancelling(true);
     try {
       await cancelBooking(bookingId);
-      toast.success("Booking cancelled. Slot coins refunded!");
-      
-      // Mock refunding slot coins
-      setSlotCoins(prev => prev + 1);
+      toast.success("Booking cancelled successfully!");
       
       // Reload bookings
       await loadBookings();
@@ -95,23 +91,8 @@ const MyBookings = () => {
             </p>
           </div>
 
-          <div className="flex flex-col md:flex-row gap-4 mb-8">
-            <Card className="w-full md:w-1/2">
-              <CardContent className="p-6 flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium text-gray-900">Your Slot Coins</h3>
-                  <p className="text-xl font-bold text-pickleball-purple">{slotCoins} Coins</p>
-                </div>
-                <Button 
-                  className="bg-pickleball-purple hover:bg-pickleball-purple/90"
-                  onClick={() => navigate("/payment")}
-                >
-                  Buy More
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="w-full md:w-1/2">
+          <div className="mb-8">
+            <Card className="w-full">
               <CardContent className="p-6 flex items-center justify-between">
                 <div>
                   <h3 className="font-medium text-gray-900">Find Available Slots</h3>

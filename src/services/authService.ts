@@ -21,13 +21,14 @@ export const getCurrentUser = async (): Promise<User | null> => {
   return user;
 };
 
-export const loginUser = async (email: string, password: string) => {
+export const loginUser = async (email: string, password: string): Promise<User | null> => {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password
   });
   
   if (error) {
+    console.error("Login error:", error);
     throw error;
   }
   
