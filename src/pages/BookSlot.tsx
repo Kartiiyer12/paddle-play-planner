@@ -17,7 +17,6 @@ import { useAuth } from "@/context/AuthContext";
 // Import refactored components
 import VenueSelector from "@/components/booking/VenueSelector";
 import DateSelector from "@/components/booking/DateSelector";
-import SlotCoinsDisplay from "@/components/booking/SlotCoinsDisplay";
 import AvailableSlots from "@/components/booking/AvailableSlots";
 
 const BookSlot = () => {
@@ -29,7 +28,6 @@ const BookSlot = () => {
   const [venues, setVenues] = useState<Venue[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isBooking, setIsBooking] = useState(false);
-  const [slotCoins, setSlotCoins] = useState(5); // Mock slot coins for now
 
   useEffect(() => {
     if (!isLoadingAuth) {
@@ -88,21 +86,10 @@ const BookSlot = () => {
       return;
     }
 
-    // Check if user has enough slot coins
-    if (slotCoins <= 0) {
-      toast.error("You don't have enough slot coins");
-      navigate("/payment");
-      return;
-    }
-
     setIsBooking(true);
     try {
       await bookSlot(slotId, venueId);
       toast.success("Slot booked successfully!");
-      
-      // Mock decreasing slot coins
-      setSlotCoins(prev => prev - 1);
-      
       loadSlots();
     } catch (error: any) {
       toast.error(error.message || "Failed to book slot");
@@ -132,8 +119,6 @@ const BookSlot = () => {
               Find and book available pickleball slots at your preferred venue and time
             </p>
           </div>
-
-          <SlotCoinsDisplay slotCoins={slotCoins} />
 
           <Card className="mb-8">
             <CardContent className="p-6">
@@ -171,7 +156,7 @@ const BookSlot = () => {
             selectedDate={selectedDate}
             onBookSlot={handleBookSlot}
             isBooking={isBooking}
-            slotCoins={slotCoins}
+            slotCoins={0}
           />
         </div>
       </div>

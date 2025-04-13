@@ -13,7 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { user, setUser } = useAuth();
+  const { user, setUser, isLoading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -21,10 +21,10 @@ const Login = () => {
   
   // Redirect if already logged in
   useEffect(() => {
-    if (user) {
+    if (user && !authLoading) {
       navigate("/book-slot");
     }
-  }, [user, navigate]);
+  }, [user, navigate, authLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +49,11 @@ const Login = () => {
       setIsLoading(false);
     }
   };
+
+  // Don't render if already authenticated and being redirected
+  if (user && !authLoading) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
