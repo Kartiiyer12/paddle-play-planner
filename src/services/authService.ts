@@ -22,17 +22,35 @@ export const getCurrentUser = async (): Promise<User | null> => {
 };
 
 export const loginUser = async (email: string, password: string): Promise<User | null> => {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
-  
-  if (error) {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    
+    if (error) {
+      console.error("Login error:", error);
+      throw error;
+    }
+    
+    if (!data.user) {
+      throw new Error("No user returned from authentication");
+    }
+    
+    const user: User = {
+      id: data.user.id,
+      email: data.user.email || '',
+      name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
+      isVerified: data.user.email_confirmed_at !== null,
+      role: data.user.user_metadata?.role || 'user',
+      createdAt: data.user.created_at || new Date().toISOString()
+    };
+    
+    return user;
+  } catch (error) {
     console.error("Login error:", error);
     throw error;
   }
-  
-  return getCurrentUser();
 };
 
 export const logoutUser = async () => {
