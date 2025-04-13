@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Venue } from "@/models/types";
 import { Search } from "lucide-react";
-import { saveUserProfile, getUserProfile } from "@/services/profileService";
+import { updateProfile, getProfile, ProfileData } from "@/services/profileService";
 
 type ProfileFormData = {
   name: string;
@@ -40,14 +40,14 @@ const ProfileForm = ({ userId, venues, onSaved }: ProfileFormProps) => {
     const loadProfile = async () => {
       setIsLoading(true);
       try {
-        const profile = await getUserProfile(userId);
+        const profile = await getProfile(userId);
         if (profile) {
           setFormData({
             name: profile.name || "",
             age: profile.age ? profile.age.toString() : "",
             sex: profile.sex || "male",
-            skillLevel: profile.skillLevel || "beginner",
-            preferredVenues: profile.preferredVenues || []
+            skillLevel: profile.skill_level || "beginner",
+            preferredVenues: profile.preferred_venues || []
           });
         }
       } catch (error) {
@@ -85,12 +85,12 @@ const ProfileForm = ({ userId, venues, onSaved }: ProfileFormProps) => {
     setIsSaving(true);
     
     try {
-      await saveUserProfile(userId, {
+      await updateProfile(userId, {
         name: formData.name,
         age: formData.age ? parseInt(formData.age) : undefined,
         sex: formData.sex,
-        skillLevel: formData.skillLevel,
-        preferredVenues: formData.preferredVenues
+        skill_level: formData.skillLevel,
+        preferred_venues: formData.preferredVenues
       });
       
       toast.success("Profile updated successfully");
