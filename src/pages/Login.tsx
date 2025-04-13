@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -17,28 +16,20 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
+    setError("");
+    
     try {
-      const user = await loginUser(email, password);
-      
-      if (user) {
-        setUser(user);
-        toast.success("Login successful!");
-        
-        // Redirect based on role
-        if (user.role === 'admin') {
-          navigate("/admin");
-        } else {
-          navigate("/dashboard");
-        }
-      }
+      await loginUser(email, password);
+      toast.success("Login successful!");
+      navigate("/my-bookings");
     } catch (error: any) {
-      console.error("Login error:", error);
-      toast.error(error.message || "Invalid email or password. Please try again.");
+      toast.error("Login failed");
+      setError(error.message || "Failed to login");
     } finally {
       setIsLoading(false);
     }

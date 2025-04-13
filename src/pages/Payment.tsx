@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import BackButton from "@/components/navigation/BackButton";
 import { Coins, CreditCard } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CoinPackage {
   id: string;
@@ -48,6 +49,7 @@ const coinPackages: CoinPackage[] = [
 
 const Payment = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [selectedPackage, setSelectedPackage] = useState<CoinPackage | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -56,26 +58,53 @@ const Payment = () => {
     setSelectedPackage(pkg);
   };
 
-  const handlePayment = async () => {
+  const handlePayment = async (method: string) => {
     if (!selectedPackage) {
       toast.error("Please select a coin package");
+      return;
+    }
+
+    if (!user) {
+      toast.error("You must be logged in to make a purchase");
+      navigate("/login");
       return;
     }
 
     setIsProcessing(true);
     
     try {
-      // Mock payment processing
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      toast.success(`Successfully purchased ${selectedPackage.coins} slot coins!`);
-      navigate("/my-bookings");
-    } catch (error) {
-      toast.error("Payment failed. Please try again.");
+      // Call our Supabase Edge Function to create a Stripe checkout session
+      const { data, error } = await supabase.functions.invoke("create-checkout-session", {
+        body: {
+          packageId: selectedPackage.id,
+          coins: selectedPackage.coins,
+          price: selectedPackage.price
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message || "Failed to create checkout session");
+      }
+
+      // Redirect to Stripe Checkout
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("No checkout URL returned");
+      }
+    } catch (error: any) {
+      console.error("Payment error:", error);
+      toast.error(error.message || "Payment processing failed. Please try again.");
     } finally {
       setIsProcessing(false);
     }
   };
+
+  // Check for canceled payment
+  const isCanceled = location.search.includes("canceled=true");
+  if (isCanceled) {
+    toast.error("Payment was canceled");
+  }
 
   if (!user) {
     navigate("/login");
@@ -121,8 +150,8 @@ const Payment = () => {
                         <Coins className="h-5 w-5 text-pickleball-purple mr-2" />
                         <span className="text-xl font-bold">{pkg.coins} Coins</span>
                       </div>
-                      <p className="mt-4 text-2xl font-bold">${pkg.price}</p>
-                      <p className="text-sm text-gray-500 mt-1">${(pkg.price / pkg.coins).toFixed(2)} per coin</p>
+                      <p className="mt-4 text-2xl font-bold">€{pkg.price}</p>
+                      <p className="text-sm text-gray-500 mt-1">€{(pkg.price / pkg.coins).toFixed(2)} per coin</p>
                     </CardContent>
                   </Card>
                 ))}
@@ -143,25 +172,11 @@ const Payment = () => {
                     <Button 
                       variant="outline" 
                       className="w-full justify-start border-2 border-gray-200"
-                    >
-                      <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google Pay" className="h-5 w-5 mr-2" />
-                      Google Pay
-                    </Button>
-                    
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start border-2 border-gray-200"
-                    >
-                      <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" alt="Apple Pay" className="h-5 w-5 mr-2" />
-                      Apple Pay
-                    </Button>
-                    
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start border-2 border-gray-200"
+                      onClick={() => handlePayment('card')}
+                      disabled={!selectedPackage || isProcessing}
                     >
                       <CreditCard className="h-5 w-5 mr-2" />
-                      Credit Card
+                      Credit / Debit Card
                     </Button>
                     
                     {selectedPackage ? (
@@ -176,12 +191,12 @@ const Payment = () => {
                         </div>
                         <div className="flex justify-between font-bold text-lg">
                           <span>Total:</span>
-                          <span>${selectedPackage.price}</span>
+                          <span>€{selectedPackage.price}</span>
                         </div>
                         
                         <Button 
                           className="w-full bg-pickleball-purple hover:bg-pickleball-purple/90 mt-4"
-                          onClick={handlePayment}
+                          onClick={() => handlePayment('card')}
                           disabled={isProcessing}
                         >
                           {isProcessing ? "Processing..." : "Complete Purchase"}

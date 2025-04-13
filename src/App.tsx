@@ -15,6 +15,7 @@ import { AuthProvider } from "./context/AuthContext";
 import Profile from "./pages/Profile";
 import MyBookings from "./pages/MyBookings";
 import Payment from "./pages/Payment";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 const App = () => {
   // Move queryClient creation inside the component
@@ -35,6 +36,7 @@ const App = () => {
               <Route path="/my-bookings" element={<MyBookings />} />
               <Route path="/book-slot" element={<BookSlot />} />
               <Route path="/payment" element={<Payment />} />
+              <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/admin" element={<AdminPanel />} />
               <Route path="/admin/users" element={<AdminPanel />} />
               <Route path="/admin/venues" element={<AdminPanel />} />
