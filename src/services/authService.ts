@@ -6,15 +6,19 @@ export const getCurrentUser = async (): Promise<User | null> => {
   const { data, error } = await supabase.auth.getUser();
   
   if (error || !data?.user) {
+    console.error("Get current user error:", error);
     return null;
   }
 
+  // Check if user has role in metadata, if not, assume 'user' role
+  const role = data.user.user_metadata?.role || 'user';
+  
   const user: User = {
     id: data.user.id,
     email: data.user.email || '',
     name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
     isVerified: data.user.email_confirmed_at !== null,
-    role: data.user.user_metadata?.role || 'user',
+    role: role,
     createdAt: data.user.created_at || new Date().toISOString()
   };
   
@@ -36,12 +40,15 @@ export const loginUser = async (email: string, password: string): Promise<User |
     return null;
   }
   
+  // Check if user has role in metadata, if not, assume 'user' role
+  const role = data.user.user_metadata?.role || 'user';
+  
   const user: User = {
     id: data.user.id,
     email: data.user.email || '',
     name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
     isVerified: data.user.email_confirmed_at !== null,
-    role: data.user.user_metadata?.role || 'user',
+    role: role,
     createdAt: data.user.created_at || new Date().toISOString()
   };
   

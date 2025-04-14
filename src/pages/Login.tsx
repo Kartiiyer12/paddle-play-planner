@@ -43,7 +43,7 @@ const Login = () => {
         setUser(loggedInUser);
         toast.success("Login successful!");
         
-        // Redirect admin users to admin panel, regular users to booking section
+        // Redirect based on user role
         if (loggedInUser.role === 'admin') {
           navigate("/admin");
         } else {
@@ -54,7 +54,7 @@ const Login = () => {
       }
     } catch (error: any) {
       console.error("Login error:", error);
-      toast.error("Login failed");
+      toast.error("Login failed: " + (error.message || "Unknown error"));
       setError(error.message || "Failed to login");
     } finally {
       setIsLoading(false);

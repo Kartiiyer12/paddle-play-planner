@@ -25,7 +25,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // First check for existing session
+    // First set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event);
+        
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          try {
+            // Use setTimeout to prevent potential deadlocks with Supabase auth
+            setTimeout(async () => {
+              const userData = await getCurrentUser();
+              setUser(userData);
+              setIsLoading(false);
+            }, 0);
+          } catch (error) {
+            console.error('Error in auth state change:', error);
+            setUser(null);
+            setIsLoading(false);
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setIsLoading(false);
+        }
+      }
+    );
+
+    // Check for existing session
     const fetchUser = async () => {
       try {
         const { data } = await supabase.auth.getSession();
@@ -44,24 +69,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     fetchUser();
-
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event);
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          try {
-            const userData = await getCurrentUser();
-            setUser(userData);
-          } catch (error) {
-            console.error('Error in auth state change:', error);
-            setUser(null);
-          }
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-        }
-      }
-    );
 
     return () => {
       subscription.unsubscribe();
