@@ -39,7 +39,7 @@ const AdminPanel = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      <div className="flex-grow pt-24 pb-16 px-4 bg-gray-50">
+      <div className="flex-grow pt-24 pb-24 px-4 bg-gray-50">
         <AdminPanelContent />
       </div>
 

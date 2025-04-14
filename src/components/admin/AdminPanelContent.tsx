@@ -6,8 +6,6 @@ import AdminNavigation from "./AdminNavigation";
 import UserManagementPanel from "./UserManagementPanel";
 import VenueManagementPanel from "./VenueManagementPanel";
 import SlotManagementPanel from "./SlotManagementPanel";
-import PaymentSetupPanel from "./PaymentSetupPanel";
-import SlotConfigPanel from "./SlotConfigPanel";
 import SettingsPanel from "./SettingsPanel";
 
 const AdminPanelContent = () => {
@@ -19,8 +17,6 @@ const AdminPanelContent = () => {
     if (path.includes('/users')) return 'users';
     if (path.includes('/venues')) return 'venues';
     if (path.includes('/slots')) return 'slots';
-    if (path.includes('/payments')) return 'payments';
-    if (path.includes('/slot-config')) return 'slot-config';
     if (path.includes('/settings')) return 'settings';
     
     return 'venues'; // Default tab
@@ -33,21 +29,17 @@ const AdminPanelContent = () => {
   };
 
   return (
-    <div className="container mx-auto">
+    <div className="container mx-auto pb-20 md:pb-0">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
         <p className="text-gray-600 mt-2">
-          Manage venues, game times, and users
+          Manage venues, slots, and users
         </p>
       </div>
 
       <AdminNavigation />
 
-      <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsContent value="users">
-          <UserManagementPanel />
-        </TabsContent>
-
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-6">
         <TabsContent value="venues">
           <VenueManagementPanel />
         </TabsContent>
@@ -56,12 +48,8 @@ const AdminPanelContent = () => {
           <SlotManagementPanel />
         </TabsContent>
 
-        <TabsContent value="payments">
-          <PaymentSetupPanel />
-        </TabsContent>
-
-        <TabsContent value="slot-config">
-          <SlotConfigPanel />
+        <TabsContent value="users">
+          <UserManagementPanel />
         </TabsContent>
 
         <TabsContent value="settings">

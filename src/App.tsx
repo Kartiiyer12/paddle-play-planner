@@ -33,11 +33,14 @@ const App = () => {
               <Route path="/profile" element={<Profile />} />
               <Route path="/my-bookings" element={<MyBookings />} />
               <Route path="/book-slot" element={<BookSlot />} />
+              
+              {/* Admin routes */}
               <Route path="/admin" element={<AdminPanel />} />
-              <Route path="/admin/users" element={<AdminPanel />} />
               <Route path="/admin/venues" element={<AdminPanel />} />
               <Route path="/admin/slots" element={<AdminPanel />} />
+              <Route path="/admin/users" element={<AdminPanel />} />
               <Route path="/admin/settings" element={<AdminPanel />} />
+              
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

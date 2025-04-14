@@ -1,15 +1,19 @@
 
 import { useNavigate, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { 
   Users, 
-  MapPin, 
-  Calendar, 
-  CreditCard,
-  Settings,
-  Euro,
-  Tag
+  Building2, 
+  CalendarDays,
+  Settings
 } from "lucide-react";
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuList,
+  NavigationMenuLink,
+} from "@/components/ui/navigation-menu";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 const AdminNavigation = () => {
   const navigate = useNavigate();
@@ -19,55 +23,80 @@ const AdminNavigation = () => {
   
   const navItems = [
     {
-      label: "User Management",
-      path: "/admin/users",
-      icon: <Users className="h-5 w-5 mr-2" />
-    },
-    {
-      label: "Venue Management",
+      label: "Venues",
       path: "/admin/venues",
-      icon: <MapPin className="h-5 w-5 mr-2" />
+      icon: <Building2 className="h-5 w-5" />
     },
     {
-      label: "Slot Management",
+      label: "Slots",
       path: "/admin/slots",
-      icon: <Calendar className="h-5 w-5 mr-2" />
+      icon: <CalendarDays className="h-5 w-5" />
     },
     {
-      label: "Payment Setup",
-      path: "/admin/payments",
-      icon: <CreditCard className="h-5 w-5 mr-2" />
-    },
-    {
-      label: "Slot Configuration",
-      path: "/admin/slot-config",
-      icon: <Tag className="h-5 w-5 mr-2" />
+      label: "Users",
+      path: "/admin/users",
+      icon: <Users className="h-5 w-5" />
     },
     {
       label: "Settings",
       path: "/admin/settings",
-      icon: <Settings className="h-5 w-5 mr-2" />
+      icon: <Settings className="h-5 w-5" />
     }
   ];
 
-  return (
-    <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 mb-6 overflow-x-auto whitespace-nowrap pb-2">
-      {navItems.map((item) => (
-        <Button
-          key={item.path}
-          variant={isActive(item.path) ? "default" : "outline"}
-          className={`flex items-center ${
-            isActive(item.path) 
-              ? "bg-pickleball-purple" 
-              : "border-pickleball-purple text-pickleball-purple hover:bg-pickleball-purple/10"
-          }`}
-          onClick={() => navigate(item.path)}
-        >
-          {item.icon}
-          <span className="hidden sm:inline">{item.label}</span>
-        </Button>
-      ))}
+  // Mobile version (bottom navigation for small screens)
+  const mobileNav = (
+    <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white border-t border-gray-200 p-2">
+      <div className="flex justify-around">
+        {navItems.map((item) => (
+          <Button
+            key={item.path + "-mobile"}
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(item.path)}
+            className={cn(
+              "flex flex-col items-center py-1 px-0 h-auto rounded-md",
+              isActive(item.path) && "bg-gray-100 text-pickleball-purple"
+            )}
+          >
+            {item.icon}
+            <span className="text-xs mt-1">{item.label}</span>
+          </Button>
+        ))}
+      </div>
     </div>
+  );
+
+  // Desktop version
+  const desktopNav = (
+    <NavigationMenu className="hidden md:flex">
+      <NavigationMenuList className="flex space-x-2">
+        {navItems.map((item) => (
+          <NavigationMenuItem key={item.path}>
+            <Button
+              variant={isActive(item.path) ? "default" : "outline"}
+              className={cn(
+                "flex items-center",
+                isActive(item.path) 
+                  ? "bg-pickleball-purple" 
+                  : "border-pickleball-purple text-pickleball-purple hover:bg-pickleball-purple/10"
+              )}
+              onClick={() => navigate(item.path)}
+            >
+              {item.icon}
+              <span className="ml-2">{item.label}</span>
+            </Button>
+          </NavigationMenuItem>
+        ))}
+      </NavigationMenuList>
+    </NavigationMenu>
+  );
+
+  return (
+    <>
+      {desktopNav}
+      {mobileNav}
+    </>
   );
 };
 
