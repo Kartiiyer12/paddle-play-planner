@@ -1,7 +1,8 @@
 
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { CalendarClock } from "lucide-react";
 import SlotConfigForm from "./SlotConfigForm";
-import { Tag } from "lucide-react";
 
 const SlotConfigPanel = () => {
   return (
@@ -15,7 +16,7 @@ const SlotConfigPanel = () => {
                 Configure automatic slot creation and pricing
               </p>
             </div>
-            <Tag className="h-8 w-8 text-pickleball-purple" />
+            <CalendarClock className="h-8 w-8 text-pickleball-purple" />
           </div>
         </CardContent>
       </Card>

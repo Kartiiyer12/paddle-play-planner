@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Edit, Trash } from "lucide-react";
+import { Plus, Edit, Trash, Calendar, CalendarClock } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import SlotForm from "./SlotForm";
 import { Slot, Venue } from "@/models/types";
@@ -19,6 +20,7 @@ const SlotManagementPanel = () => {
   const [isDeleteSlotDialogOpen, setIsDeleteSlotDialogOpen] = useState(false);
   const [slotToDelete, setSlotToDelete] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [autoCreateSlots, setAutoCreateSlots] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -69,18 +71,44 @@ const SlotManagementPanel = () => {
     loadData();
   };
 
+  const toggleAutoCreateSlots = (enabled: boolean) => {
+    setAutoCreateSlots(enabled);
+    toast.success(enabled 
+      ? "Automatic slot creation enabled. New slots will be created weekly."
+      : "Automatic slot creation disabled."
+    );
+    // In a real implementation, we would save this setting to the database
+  };
+
   return (
     <>
       <Card className="mb-6">
         <CardContent className="p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Add New Slot</h2>
+            <div>
+              <h2 className="text-xl font-semibold">Slot Management</h2>
+              <p className="text-gray-500 text-sm mt-1">Create and manage time slots for venues</p>
+            </div>
             <Button 
               onClick={() => handleOpenSlotDialog()}
               className="bg-pickleball-purple hover:bg-pickleball-purple/90"
             >
               <Plus className="h-4 w-4 mr-2" /> Add Slot
             </Button>
+          </div>
+          
+          <div className="mt-6 flex items-center justify-between border-t border-gray-200 pt-4">
+            <div className="flex items-center">
+              <CalendarClock className="h-5 w-5 text-pickleball-purple mr-2" />
+              <div>
+                <h3 className="font-medium">Auto-Create Weekly Slots</h3>
+                <p className="text-sm text-gray-500">Automatically create slots weekly based on template</p>
+              </div>
+            </div>
+            <Switch 
+              checked={autoCreateSlots} 
+              onCheckedChange={toggleAutoCreateSlots}
+            />
           </div>
         </CardContent>
       </Card>

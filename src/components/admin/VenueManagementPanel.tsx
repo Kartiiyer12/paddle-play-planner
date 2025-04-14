@@ -67,7 +67,10 @@ const VenueManagementPanel = () => {
       <Card className="mb-6">
         <CardContent className="p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Add New Venue</h2>
+            <div>
+              <h2 className="text-xl font-semibold">Venue Management</h2>
+              <p className="text-gray-500 text-sm mt-1">Create and manage pickleball venues</p>
+            </div>
             <Button 
               onClick={() => handleOpenVenueDialog()}
               className="bg-pickleball-purple hover:bg-pickleball-purple/90"
