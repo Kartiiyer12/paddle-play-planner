@@ -47,6 +47,10 @@ const SlotManagementPanel = () => {
     setIsSlotDialogOpen(true);
   };
 
+  const handleCloseSlotDialog = () => {
+    setIsSlotDialogOpen(false);
+  };
+
   const handleConfirmDeleteSlot = (slotId: string) => {
     setSlotToDelete(slotId);
     setIsDeleteSlotDialogOpen(true);
@@ -187,7 +191,11 @@ const SlotManagementPanel = () => {
               {selectedSlot ? "Update slot information" : "Create a new time slot for a venue"}
             </DialogDescription>
           </DialogHeader>
-          <SlotForm slot={selectedSlot || undefined} onSuccess={handleSlotSuccess} />
+          <SlotForm 
+            slot={selectedSlot || undefined} 
+            onSuccess={handleSlotSuccess} 
+            onCancel={handleCloseSlotDialog}
+          />
         </DialogContent>
       </Dialog>
 

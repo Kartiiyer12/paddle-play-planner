@@ -1,11 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import AdminNavigation from "./AdminNavigation";
 import UserManagementPanel from "./UserManagementPanel";
 import VenueManagementPanel from "./VenueManagementPanel";
 import SlotManagementPanel from "./SlotManagementPanel";
+import SlotConfigPanel from "./SlotConfigPanel";
 import SettingsPanel from "./SettingsPanel";
 
 const AdminPanelContent = () => {
@@ -16,11 +17,25 @@ const AdminPanelContent = () => {
     
     if (path.includes('/users')) return 'users';
     if (path.includes('/venues')) return 'venues';
-    if (path.includes('/slots')) return 'slots';
     if (path.includes('/settings')) return 'settings';
     
-    return 'venues'; // Default tab
+    return 'slots'; // Default tab is now slots
   });
+
+  // Effect to update activeTab when the URL changes
+  useEffect(() => {
+    const path = location.pathname;
+    
+    if (path.includes('/users')) {
+      setActiveTab('users');
+    } else if (path.includes('/venues')) {
+      setActiveTab('venues');
+    } else if (path.includes('/settings')) {
+      setActiveTab('settings');
+    } else if (path.includes('/slots') || path === '/admin') {
+      setActiveTab('slots');
+    }
+  }, [location.pathname]);
 
   // Update URL when tab changes
   const handleTabChange = (value: string) => {

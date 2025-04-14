@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, X } from "lucide-react";
 import { format } from "date-fns";
 import { Slot, Venue } from "@/models/types";
 import { createSlot, updateSlot } from "@/services/slotService";
@@ -16,9 +17,10 @@ import { toast } from "sonner";
 interface SlotFormProps {
   slot?: Slot;
   onSuccess: () => void;
+  onCancel?: () => void;
 }
 
-const SlotForm = ({ slot, onSuccess }: SlotFormProps) => {
+const SlotForm = ({ slot, onSuccess, onCancel }: SlotFormProps) => {
   const [venues, setVenues] = useState<Venue[]>([]);
   const [formData, setFormData] = useState({
     venueId: slot?.venueId || "",
@@ -29,6 +31,7 @@ const SlotForm = ({ slot, onSuccess }: SlotFormProps) => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingVenues, setIsLoadingVenues] = useState(true);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   useEffect(() => {
     const loadVenues = async () => {
@@ -98,6 +101,19 @@ const SlotForm = ({ slot, onSuccess }: SlotFormProps) => {
     }
   };
 
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    }
+  };
+
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setFormData(prev => ({ ...prev, date }));
+      setIsDatePickerOpen(false);
+    }
+  };
+
   if (isLoadingVenues) {
     return <div>Loading venues...</div>;
   }
@@ -133,22 +149,24 @@ const SlotForm = ({ slot, onSuccess }: SlotFormProps) => {
             
             <div className="space-y-2">
               <Label>Date*</Label>
-              <Popover>
+              <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className="w-full justify-start text-left font-normal"
+                    type="button"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {format(formData.date, "PPP")}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0 pointer-events-auto">
                   <Calendar
                     mode="single"
                     selected={formData.date}
-                    onSelect={(date) => date && setFormData({...formData, date})}
+                    onSelect={handleDateSelect}
                     initialFocus
+                    className="p-3 pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
@@ -193,7 +211,16 @@ const SlotForm = ({ slot, onSuccess }: SlotFormProps) => {
             </div>
           </div>
 
-          <div className="flex justify-end pt-4">
+          <div className="flex justify-end pt-4 space-x-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancel}
+              className="flex items-center"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Cancel
+            </Button>
             <Button
               type="submit"
               className="bg-pickleball-purple hover:bg-pickleball-purple/90"

@@ -35,7 +35,7 @@ const App = () => {
               <Route path="/book-slot" element={<BookSlot />} />
               
               {/* Admin routes */}
-              <Route path="/admin" element={<AdminPanel />} />
+              <Route path="/admin" element={<Navigate to="/admin/slots" replace />} />
               <Route path="/admin/venues" element={<AdminPanel />} />
               <Route path="/admin/slots" element={<AdminPanel />} />
               <Route path="/admin/users" element={<AdminPanel />} />
