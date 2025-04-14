@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Edit, Trash, Calendar, CalendarClock } from "lucide-react";
+import { Plus, Edit, Trash, Calendar, CalendarClock, Users } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import SlotForm from "./SlotForm";
 import { Slot, Venue } from "@/models/types";
 import { getSlots, deleteSlot } from "@/services/slotService";
 import { getVenues } from "@/services/venueService";
+import PlayerCheckInDialog from "./PlayerCheckInDialog";
 
 const SlotManagementPanel = () => {
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -21,6 +22,7 @@ const SlotManagementPanel = () => {
   const [slotToDelete, setSlotToDelete] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [autoCreateSlots, setAutoCreateSlots] = useState(false);
+  const [isPlayerCheckInDialogOpen, setIsPlayerCheckInDialogOpen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -49,6 +51,11 @@ const SlotManagementPanel = () => {
 
   const handleCloseSlotDialog = () => {
     setIsSlotDialogOpen(false);
+  };
+
+  const handleOpenPlayerCheckIn = (slot: Slot) => {
+    setSelectedSlot(slot);
+    setIsPlayerCheckInDialogOpen(true);
   };
 
   const handleConfirmDeleteSlot = (slotId: string) => {
@@ -161,6 +168,15 @@ const SlotManagementPanel = () => {
                             <Button
                               size="sm"
                               variant="outline"
+                              className="border-blue-500 text-blue-500"
+                              onClick={() => handleOpenPlayerCheckIn(slot)}
+                            >
+                              <Users className="h-4 w-4 mr-1" />
+                              Players
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
                               className="border-red-500 text-red-500"
                               onClick={() => handleConfirmDeleteSlot(slot.id)}
                             >
@@ -222,6 +238,24 @@ const SlotManagementPanel = () => {
               Delete
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPlayerCheckInDialogOpen} onOpenChange={setIsPlayerCheckInDialogOpen}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>Player Check-In</DialogTitle>
+            <DialogDescription>
+              Manage player attendance for this slot
+            </DialogDescription>
+          </DialogHeader>
+          {selectedSlot && (
+            <PlayerCheckInDialog 
+              slotId={selectedSlot.id} 
+              venueId={selectedSlot.venueId} 
+              onClose={() => setIsPlayerCheckInDialogOpen(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </>

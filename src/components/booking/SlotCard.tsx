@@ -1,84 +1,122 @@
 
-import { Slot, Venue } from "@/models/types";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, CalendarIcon, MapPin, Coins } from "lucide-react";
-import { format } from "date-fns";
+import { CalendarDays, Clock, MapPin, UserCheck } from "lucide-react";
+import { Slot, Venue } from "@/models/types";
+import { useAuth } from "@/context/AuthContext";
+import { cn } from "@/lib/utils";
+import { updateBookingCheckInStatus } from "@/services/bookingService";
+import { toast } from "sonner";
 
 interface SlotCardProps {
   slot: Slot;
-  venue: Venue | undefined;
-  onBookSlot: (slotId: string, venueId: string) => Promise<void>;
-  isBooking: boolean;
-  selectedDate: Date | undefined;
-  hasEnoughCoins: boolean;
+  venue: Venue;
+  isBooked?: boolean;
+  bookingId?: string;
+  isCheckedIn?: boolean;
+  onBook?: () => void;
+  disableBooking?: boolean;
 }
 
-const SlotCard = ({ 
-  slot, 
-  venue, 
-  onBookSlot, 
-  isBooking, 
-  selectedDate, 
-  hasEnoughCoins 
+const SlotCard = ({
+  slot,
+  venue,
+  isBooked = false,
+  bookingId,
+  isCheckedIn = false,
+  onBook,
+  disableBooking = false
 }: SlotCardProps) => {
+  const { user } = useAuth();
+  const [checkingIn, setCheckingIn] = useState(false);
   const isFull = slot.currentPlayers >= slot.maxPlayers;
+  const isUpcoming = new Date(`${slot.date}T${slot.startTime}`) > new Date();
+  const canCheckIn = isBooked && isUpcoming && !isCheckedIn;
+
+  const handleCheckIn = async () => {
+    if (!bookingId) return;
+    
+    try {
+      setCheckingIn(true);
+      await updateBookingCheckInStatus(bookingId, true);
+      toast.success("You're checked in! Enjoy your game.");
+    } catch (error: any) {
+      toast.error(error.message || "Check-in failed");
+    } finally {
+      setCheckingIn(false);
+    }
+  };
 
   return (
-    <Card key={slot.id}>
-      <CardContent className="p-6">
-        <h3 className="font-semibold text-lg mb-2">{venue?.name}</h3>
-        <div className="space-y-3 mb-4">
-          <div className="flex items-center">
-            <MapPin className="h-4 w-4 mr-2 text-pickleball-purple" />
-            <span className="text-sm text-gray-600">
-              {venue?.city}, {venue?.state}
-            </span>
-          </div>
-          <div className="flex items-center">
-            <CalendarIcon className="h-4 w-4 mr-2 text-pickleball-purple" />
-            <span className="text-sm text-gray-600">
-              {selectedDate ? format(selectedDate, "EEEE, MMMM d") : ""} ({slot.dayOfWeek})
-            </span>
-          </div>
-          <div className="flex items-center">
-            <Clock className="h-4 w-4 mr-2 text-pickleball-purple" />
-            <span className="text-sm text-gray-600">
-              {slot.startTime} - {slot.endTime}
-            </span>
-          </div>
-          <div className="flex items-center">
-            <Coins className="h-4 w-4 mr-2 text-pickleball-purple" />
-            <span className="text-sm text-gray-600">
-              1 Slot Coin
-            </span>
+    <Card className={cn(
+      "border border-gray-200 transition-all duration-300",
+      isBooked && "border-pickleball-purple/70",
+      isFull && !isBooked && "opacity-60"
+    )}>
+      <CardContent className="p-4 space-y-2">
+        <div className="flex items-start justify-between">
+          <h3 className="font-medium">{venue.name}</h3>
+          <div className={cn(
+            "px-2 py-1 text-xs rounded",
+            isFull ? "bg-gray-100 text-gray-600" : "bg-green-100 text-green-700"
+          )}>
+            {slot.currentPlayers}/{slot.maxPlayers} Players
           </div>
         </div>
-
-        <div className="flex justify-between items-center">
-          <div>
-            <span className="text-sm font-medium">
-              {slot.currentPlayers}/{slot.maxPlayers} Players
-            </span>
-            {isFull && (
-              <span className="ml-2 text-xs text-red-500 bg-red-50 px-2 py-1 rounded-full">
-                Full
-              </span>
-            )}
+        
+        <div className="text-sm text-gray-500 space-y-1">
+          <div className="flex items-center">
+            <MapPin className="w-3.5 h-3.5 mr-1.5" />
+            <span>{venue.city}, {venue.state}</span>
           </div>
-          <Button
-            onClick={() => onBookSlot(slot.id, slot.venueId)}
-            disabled={isFull || isBooking || !hasEnoughCoins}
-            className={
-              isFull 
-                ? "bg-gray-300" 
-                : !hasEnoughCoins 
-                  ? "bg-gray-300" 
-                  : "bg-pickleball-purple hover:bg-pickleball-purple/90"
-            }
-          >
-            {isBooking ? "Booking..." : !hasEnoughCoins ? "Need Coins" : "Book Slot"}
-          </Button>
+          <div className="flex items-center">
+            <CalendarDays className="w-3.5 h-3.5 mr-1.5" />
+            <span>{slot.date} ({slot.dayOfWeek})</span>
+          </div>
+          <div className="flex items-center">
+            <Clock className="w-3.5 h-3.5 mr-1.5" />
+            <span>{slot.startTime} - {slot.endTime}</span>
+          </div>
+        </div>
+        
+        <div className="pt-2">
+          {isBooked ? (
+            <div className="space-y-2">
+              <div className={cn(
+                "text-xs px-2 py-1 rounded-full w-fit",
+                "bg-pickleball-purple/20 text-pickleball-purple"
+              )}>
+                You're booked for this slot
+              </div>
+              
+              {isCheckedIn ? (
+                <div className="flex items-center text-sm text-green-600">
+                  <UserCheck className="h-4 w-4 mr-1" /> 
+                  Checked In
+                </div>
+              ) : canCheckIn ? (
+                <Button 
+                  size="sm" 
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  onClick={handleCheckIn}
+                  disabled={checkingIn}
+                >
+                  <UserCheck className="h-4 w-4 mr-2" /> 
+                  Check In
+                </Button>
+              ) : null}
+            </div>
+          ) : (
+            <Button
+              className="w-full bg-pickleball-purple hover:bg-pickleball-purple/90"
+              size="sm"
+              onClick={onBook}
+              disabled={isFull || disableBooking || !user}
+            >
+              {isFull ? "Fully Booked" : "Book Now"}
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

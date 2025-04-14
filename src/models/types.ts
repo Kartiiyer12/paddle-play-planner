@@ -42,6 +42,8 @@ export interface Booking {
   venueId: string;
   createdAt: string;
   status: "confirmed" | "cancelled";
+  checkedIn?: boolean;
+  userName?: string;
 }
 
 export interface BookingWithDetails extends Booking {
