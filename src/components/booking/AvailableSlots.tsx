@@ -47,7 +47,7 @@ const AvailableSlots = ({
           <Card>
             <CardContent className="p-6 text-center">
               <p className="text-gray-600 mb-4">No slots available for the selected venue and date.</p>
-              <p className="text-gray-600">Please try a different combination.</p>
+              <p className="text-gray-600">Try a different date or venue.</p>
             </CardContent>
           </Card>
         )

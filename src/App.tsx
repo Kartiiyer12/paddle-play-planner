@@ -33,6 +33,7 @@ const App = () => {
               <Route path="/profile" element={<Profile />} />
               <Route path="/my-bookings" element={<MyBookings />} />
               <Route path="/book-slot" element={<BookSlot />} />
+              <Route path="/dashboard" element={<Navigate to="/my-bookings" replace />} />
               
               {/* Admin routes */}
               <Route path="/admin" element={<Navigate to="/admin/slots" replace />} />

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,10 +7,12 @@ import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BackButton from "@/components/navigation/BackButton";
-import { Calendar, Clock, MapPin } from "lucide-react";
+import { Calendar, Clock, MapPin, Check, X } from "lucide-react";
 import { BookingWithDetails } from "@/models/types";
 import { useAuth } from "@/context/AuthContext";
 import { getUserBookings, cancelBooking } from "@/services/userBookingService";
+import { updateBookingCheckInStatus } from "@/services/checkInService";
+import { Badge } from "@/components/ui/badge";
 
 const MyBookings = () => {
   const navigate = useNavigate();
@@ -17,6 +20,7 @@ const MyBookings = () => {
   const [bookings, setBookings] = useState<BookingWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isCheckingIn, setIsCheckingIn] = useState(false);
 
   useEffect(() => {
     if (!isLoadingAuth) {
@@ -54,6 +58,25 @@ const MyBookings = () => {
       toast.error(error.message || "Failed to cancel booking");
     } finally {
       setIsCancelling(false);
+    }
+  };
+
+  const handleCheckIn = async (bookingId: string, isCheckedIn: boolean) => {
+    setIsCheckingIn(true);
+    try {
+      await updateBookingCheckInStatus(bookingId, !isCheckedIn);
+      toast.success(isCheckedIn ? "Check-in removed successfully" : "Checked in successfully!");
+      
+      // Update local state to reflect the change
+      setBookings(bookings.map(booking => 
+        booking.id === bookingId 
+          ? { ...booking, checkedIn: !isCheckedIn } 
+          : booking
+      ));
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update check-in status");
+    } finally {
+      setIsCheckingIn(false);
     }
   };
 
@@ -141,6 +164,24 @@ const MyBookings = () => {
                           {booking.slot.startTime} - {booking.slot.endTime}
                         </span>
                       </div>
+
+                      <div className="flex items-center mt-2">
+                        <span className="text-sm font-medium">
+                          Status: 
+                        </span>
+                        {booking.checkedIn ? (
+                          <Badge className="ml-2 bg-green-500">
+                            <Check className="h-3 w-3 mr-1" />
+                            Checked In
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="ml-2">
+                            <X className="h-3 w-3 mr-1" />
+                            Not Checked In
+                          </Badge>
+                        )}
+                      </div>
+
                       <div className="flex justify-between items-center mt-4">
                         <span className="text-sm font-medium">
                           {booking.slot.currentPlayers}/{booking.slot.maxPlayers} Players
@@ -148,9 +189,12 @@ const MyBookings = () => {
                         <div className="flex space-x-2">
                           <Button 
                             size="sm"
-                            className="bg-green-500 hover:bg-green-600"
+                            variant={booking.checkedIn ? "outline" : "default"}
+                            className={booking.checkedIn ? "border-green-500 text-green-500" : "bg-green-500 hover:bg-green-600"}
+                            onClick={() => handleCheckIn(booking.id, booking.checkedIn)}
+                            disabled={isCheckingIn}
                           >
-                            Check In
+                            {booking.checkedIn ? "Remove Check-in" : "Check In"}
                           </Button>
                           <Button 
                             variant="outline" 

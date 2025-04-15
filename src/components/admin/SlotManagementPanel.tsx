@@ -12,6 +12,8 @@ import { Slot, Venue } from "@/models/types";
 import { getSlots, deleteSlot } from "@/services/slotService";
 import { getVenues } from "@/services/venueService";
 import PlayerCheckInDialog from "./PlayerCheckInDialog";
+import { format, isToday, parseISO } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 
 const SlotManagementPanel = () => {
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -91,6 +93,96 @@ const SlotManagementPanel = () => {
     // In a real implementation, we would save this setting to the database
   };
 
+  // Separate slots into today and future
+  const todaySlots = slots.filter(slot => isToday(parseISO(slot.date)));
+  const futureSlots = slots.filter(slot => !isToday(parseISO(slot.date)) && parseISO(slot.date) > new Date());
+
+  // Sort slots by date and time
+  const sortedFutureSlots = [...futureSlots].sort((a, b) => {
+    const dateCompare = new Date(a.date).getTime() - new Date(b.date).getTime();
+    if (dateCompare !== 0) return dateCompare;
+    return a.startTime.localeCompare(b.startTime);
+  });
+
+  // Sort today's slots by time
+  const sortedTodaySlots = [...todaySlots].sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+  // Create a reusable slot table component
+  const renderSlotTable = (slotsList: Slot[], title: string) => {
+    if (slotsList.length === 0) return null;
+    
+    return (
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <h3 className="text-lg font-semibold mb-4">{title}</h3>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Venue</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Day</TableHead>
+                  <TableHead>Time</TableHead>
+                  <TableHead>Players</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {slotsList.map((slot) => {
+                  const venue = venues.find(v => v.id === slot.venueId);
+                  const isSlotToday = isToday(parseISO(slot.date));
+                  return (
+                    <TableRow key={slot.id}>
+                      <TableCell>{venue?.name || "Unknown Venue"}</TableCell>
+                      <TableCell>
+                        {slot.date}
+                        {isSlotToday && <Badge className="ml-2 bg-blue-500">Today</Badge>}
+                      </TableCell>
+                      <TableCell>{slot.dayOfWeek}</TableCell>
+                      <TableCell>{`${slot.startTime} - ${slot.endTime}`}</TableCell>
+                      <TableCell>{`${slot.currentPlayers}/${slot.maxPlayers}`}</TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-pickleball-purple text-pickleball-purple"
+                            onClick={() => handleOpenSlotDialog(slot)}
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-blue-500 text-blue-500"
+                            onClick={() => handleOpenPlayerCheckIn(slot)}
+                          >
+                            <Users className="h-4 w-4 mr-1" />
+                            Players
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-red-500 text-red-500"
+                            onClick={() => handleConfirmDeleteSlot(slot.id)}
+                          >
+                            <Trash className="h-4 w-4 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <>
       <Card className="mb-6">
@@ -124,80 +216,20 @@ const SlotManagementPanel = () => {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Existing Slots</h2>
-          {isLoading ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">Loading slots...</p>
-            </div>
-          ) : slots.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Venue</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Day</TableHead>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Players</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {slots.map((slot) => {
-                    const venue = venues.find(v => v.id === slot.venueId);
-                    return (
-                      <TableRow key={slot.id}>
-                        <TableCell>{venue?.name || "Unknown Venue"}</TableCell>
-                        <TableCell>{slot.date}</TableCell>
-                        <TableCell>{slot.dayOfWeek}</TableCell>
-                        <TableCell>{`${slot.startTime} - ${slot.endTime}`}</TableCell>
-                        <TableCell>{`${slot.currentPlayers}/${slot.maxPlayers}`}</TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-pickleball-purple text-pickleball-purple"
-                              onClick={() => handleOpenSlotDialog(slot)}
-                            >
-                              <Edit className="h-4 w-4 mr-1" />
-                              Edit
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-blue-500 text-blue-500"
-                              onClick={() => handleOpenPlayerCheckIn(slot)}
-                            >
-                              <Users className="h-4 w-4 mr-1" />
-                              Players
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-red-500 text-red-500"
-                              onClick={() => handleConfirmDeleteSlot(slot.id)}
-                            >
-                              <Trash className="h-4 w-4 mr-1" />
-                              Delete
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No slots found. Add your first slot to get started!</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Today's Slots Section */}
+      {renderSlotTable(sortedTodaySlots, "Today's Slots")}
+      
+      {/* Future Slots Section */}
+      {renderSlotTable(sortedFutureSlots, "Upcoming Slots")}
+      
+      {/* No slots message */}
+      {!isLoading && slots.length === 0 && (
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-gray-500">No slots found. Add your first slot to get started!</p>
+          </CardContent>
+        </Card>
+      )}
 
       <Dialog open={isSlotDialogOpen} onOpenChange={setIsSlotDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">

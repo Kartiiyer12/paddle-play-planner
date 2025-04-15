@@ -6,9 +6,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { getSlotBookings } from "@/services/adminBookingService";
 import { updateBookingCheckInStatus } from "@/services/checkInService";
+import { cancelBooking } from "@/services/userBookingService";
 import { BookingWithDetails } from "@/models/types";
-import { UserCheck } from "lucide-react";
+import { UserCheck, X, Check } from "lucide-react";
 import { getSlotById } from "@/services/slotService";
+import { Badge } from "@/components/ui/badge";
 
 interface PlayerCheckInDialogProps {
   slotId: string;
@@ -19,6 +21,7 @@ interface PlayerCheckInDialogProps {
 const PlayerCheckInDialog = ({ slotId, venueId, onClose }: PlayerCheckInDialogProps) => {
   const [bookings, setBookings] = useState<BookingWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [slotDetails, setSlotDetails] = useState<{date: string, startTime: string, venueName: string}>({
     date: '', 
     startTime: '',
@@ -68,6 +71,20 @@ const PlayerCheckInDialog = ({ slotId, venueId, onClose }: PlayerCheckInDialogPr
     }
   };
 
+  const handleCancelBooking = async (bookingId: string) => {
+    setIsCancelling(true);
+    try {
+      await cancelBooking(bookingId);
+      toast.success("Booking cancelled successfully");
+      // Remove the cancelled booking from the list
+      setBookings(bookings.filter(booking => booking.id !== bookingId));
+    } catch (error: any) {
+      toast.error(error.message || "Failed to cancel booking");
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {!isLoading && (
@@ -104,23 +121,36 @@ const PlayerCheckInDialog = ({ slotId, venueId, onClose }: PlayerCheckInDialogPr
                 </TableCell>
                 <TableCell className="text-center">
                   {booking.checkedIn ? (
-                    <span className="inline-flex items-center px-2 py-1 rounded-md bg-green-100 text-green-800">
-                      <UserCheck className="h-4 w-4 mr-1" />
+                    <Badge variant="success" className="inline-flex items-center bg-green-100 text-green-800 px-2 py-1 rounded-md">
+                      <Check className="h-3.5 w-3.5 mr-1" />
                       Checked In
-                    </span>
+                    </Badge>
                   ) : (
-                    <span className="text-gray-500">Not checked in</span>
+                    <Badge variant="outline" className="inline-flex items-center px-2 py-1 rounded-md">
+                      <X className="h-3.5 w-3.5 mr-1" />
+                      Not checked in
+                    </Badge>
                   )}
                 </TableCell>
                 <TableCell className="text-right">
-                  <div className="flex items-center justify-end">
-                    <span className="mr-2">Check-in:</span>
-                    <Checkbox 
-                      checked={booking.checkedIn} 
-                      onCheckedChange={(isChecked) => {
-                        handleCheckInToggle(booking.id, !!isChecked);
-                      }}
-                    />
+                  <div className="flex items-center justify-end space-x-2">
+                    <Button
+                      size="sm"
+                      variant={booking.checkedIn ? "outline" : "default"}
+                      className={booking.checkedIn ? "border-green-500 text-green-500" : "bg-green-500 hover:bg-green-600"}
+                      onClick={() => handleCheckInToggle(booking.id, !booking.checkedIn)}
+                    >
+                      {booking.checkedIn ? "Remove Check-in" : "Check In"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-red-500 text-red-500"
+                      onClick={() => handleCancelBooking(booking.id)}
+                      disabled={isCancelling}
+                    >
+                      Cancel
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>

@@ -22,11 +22,11 @@ const Login = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (user && !authLoading) {
-      // Redirect admin users to admin panel, regular users to booking section
+      // Redirect admin users to admin panel, regular users to my bookings
       if (user.role === 'admin') {
         navigate("/admin");
       } else {
-        navigate("/book-slot");
+        navigate("/my-bookings");
       }
     }
   }, [user, navigate, authLoading]);
@@ -47,7 +47,7 @@ const Login = () => {
         if (loggedInUser.role === 'admin') {
           navigate("/admin");
         } else {
-          navigate("/book-slot");
+          navigate("/my-bookings");
         }
       } else {
         throw new Error("Login failed. Please try again.");
