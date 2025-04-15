@@ -11,27 +11,33 @@ export type Database = {
     Tables: {
       bookings: {
         Row: {
+          checked_in: boolean | null
           created_at: string
           id: string
           slot_id: string
           status: string
           user_id: string
+          user_name: string | null
           venue_id: string
         }
         Insert: {
+          checked_in?: boolean | null
           created_at?: string
           id?: string
           slot_id: string
           status: string
           user_id: string
+          user_name?: string | null
           venue_id: string
         }
         Update: {
+          checked_in?: boolean | null
           created_at?: string
           id?: string
           slot_id?: string
           status?: string
           user_id?: string
+          user_name?: string | null
           venue_id?: string
         }
         Relationships: [
@@ -55,6 +61,7 @@ export type Database = {
         Row: {
           age: number | null
           created_at: string | null
+          email: string | null
           id: string
           name: string | null
           preferred_venues: string[] | null
@@ -65,6 +72,7 @@ export type Database = {
         Insert: {
           age?: number | null
           created_at?: string | null
+          email?: string | null
           id: string
           name?: string | null
           preferred_venues?: string[] | null
@@ -75,6 +83,7 @@ export type Database = {
         Update: {
           age?: number | null
           created_at?: string | null
+          email?: string | null
           id?: string
           name?: string | null
           preferred_venues?: string[] | null

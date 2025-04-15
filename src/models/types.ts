@@ -42,7 +42,7 @@ export interface Booking {
   venueId: string;
   createdAt: string;
   status: "confirmed" | "cancelled";
-  checkedIn?: boolean;
+  checkedIn: boolean;
   userName?: string;
 }
 

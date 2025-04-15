@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Booking, BookingWithDetails } from "@/models/types";
 
@@ -31,6 +32,7 @@ export const getUserBookings = async () => {
     status: booking.status,
     createdAt: booking.created_at,
     checkedIn: booking.checked_in || false,
+    userName: booking.user_name || '',
     venue: {
       id: booking.venues.id,
       name: booking.venues.name,
@@ -153,41 +155,46 @@ export const getSlotBookings = async (slotId: string) => {
     throw error;
   }
   
-  return data.map(booking => ({
-    id: booking.id,
-    userId: booking.user_id,
-    slotId: booking.slot_id,
-    venueId: booking.venue_id,
-    status: booking.status,
-    createdAt: booking.created_at,
-    checkedIn: booking.checked_in || false,
-    userName: booking.profiles?.name || 'Unknown Player',
-    venue: {
-      id: booking.venues.id,
-      name: booking.venues.name,
-      address: booking.venues.address,
-      city: booking.venues.city,
-      state: booking.venues.state,
-      zip: booking.venues.zip || '',
-      description: booking.venues.description || '',
-      courtCount: booking.venues.court_count,
-      imageUrl: booking.venues.image_url || '',
-      createdAt: booking.venues.created_at,
-      updatedAt: booking.venues.updated_at
-    },
-    slot: {
-      id: booking.slots.id,
-      venueId: booking.slots.venue_id,
-      date: booking.slots.date,
-      dayOfWeek: booking.slots.day_of_week || '',
-      startTime: booking.slots.start_time,
-      endTime: booking.slots.end_time,
-      maxPlayers: booking.slots.max_players,
-      currentPlayers: booking.slots.current_players,
-      createdAt: booking.slots.created_at,
-      updatedAt: booking.slots.updated_at
-    }
-  })) as BookingWithDetails[];
+  if (!data) return [];
+  
+  return data.map(booking => {
+    const profileData = booking.profiles || { name: 'Unknown Player' };
+    return {
+      id: booking.id,
+      userId: booking.user_id,
+      slotId: booking.slot_id,
+      venueId: booking.venue_id,
+      status: booking.status,
+      createdAt: booking.created_at,
+      checkedIn: booking.checked_in || false,
+      userName: booking.user_name || profileData.name || 'Unknown Player',
+      venue: {
+        id: booking.venues.id,
+        name: booking.venues.name,
+        address: booking.venues.address,
+        city: booking.venues.city,
+        state: booking.venues.state,
+        zip: booking.venues.zip || '',
+        description: booking.venues.description || '',
+        courtCount: booking.venues.court_count,
+        imageUrl: booking.venues.image_url || '',
+        createdAt: booking.venues.created_at,
+        updatedAt: booking.venues.updated_at
+      },
+      slot: {
+        id: booking.slots.id,
+        venueId: booking.slots.venue_id,
+        date: booking.slots.date,
+        dayOfWeek: booking.slots.day_of_week || '',
+        startTime: booking.slots.start_time,
+        endTime: booking.slots.end_time,
+        maxPlayers: booking.slots.max_players,
+        currentPlayers: booking.slots.current_players,
+        createdAt: booking.slots.created_at,
+        updatedAt: booking.slots.updated_at
+      }
+    };
+  }) as BookingWithDetails[];
 };
 
 export const bookSlot = async (slotId: string, venueId: string) => {
@@ -226,7 +233,8 @@ export const bookSlot = async (slotId: string, venueId: string) => {
     venueId: data[0].venue_id,
     status: data[0].status,
     createdAt: data[0].created_at,
-    checkedIn: data[0].checked_in || false
+    checkedIn: data[0].checked_in || false,
+    userName: data[0].user_name || ''
   } as Booking;
 };
 
@@ -297,7 +305,9 @@ export const updateBookingStatus = async (bookingId: string, status: 'confirmed'
     slotId: data[0].slot_id,
     venueId: data[0].venue_id,
     status: data[0].status,
-    createdAt: data[0].created_at
+    createdAt: data[0].created_at,
+    checkedIn: data[0].checked_in || false,
+    userName: data[0].user_name || ''
   } as Booking;
 };
 
@@ -344,6 +354,7 @@ export const updateBookingCheckInStatus = async (bookingId: string, checkedIn: b
     venueId: data[0].venue_id,
     status: data[0].status,
     createdAt: data[0].created_at,
-    checkedIn: data[0].checked_in
+    checkedIn: data[0].checked_in || false,
+    userName: data[0].user_name || ''
   } as Booking;
 };

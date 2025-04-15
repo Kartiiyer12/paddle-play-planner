@@ -30,10 +30,14 @@ export const useBookingUsers = () => {
       // Get all bookings
       const { data: bookings, error: bookingsError } = await supabase
         .from('bookings')
-        .select('user_id, user_name, created_at')
-        .eq('status', 'confirmed');
+        .select('user_id, user_name, created_at, checked_in');
         
       if (bookingsError) throw bookingsError;
+      
+      if (!bookings) {
+        setUsers([]);
+        return;
+      }
 
       // Group by user_id and count bookings
       const userMap = new Map<string, {
@@ -44,6 +48,8 @@ export const useBookingUsers = () => {
       }>();
       
       bookings.forEach(booking => {
+        if (!booking) return;
+        
         const userId = booking.user_id;
         const userName = booking.user_name;
         const existingUser = userMap.get(userId);
@@ -82,6 +88,8 @@ export const useBookingUsers = () => {
           
         if (!profilesError && profiles) {
           profiles.forEach(profile => {
+            if (!profile) return;
+            
             const user = userMap.get(profile.id);
             if (user) {
               user.name = profile.name || 'Unknown User';
