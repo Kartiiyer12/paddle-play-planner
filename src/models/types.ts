@@ -50,3 +50,11 @@ export interface BookingWithDetails extends Booking {
   venue: Venue;
   slot: Slot;
 }
+
+export interface BookingUser {
+  id: string;
+  email: string;
+  name: string;
+  bookingsCount: number;
+  lastBookingDate?: string;
+}

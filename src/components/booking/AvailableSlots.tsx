@@ -30,17 +30,15 @@ const AvailableSlots = ({
         availableSlots.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {availableSlots.map((slot) => {
-              const venue = venues.find((v) => v.id === slot.venueId);
+              const venue = venues.find((v) => v.id === slot.venueId) as Venue;
               
               return (
                 <SlotCard
                   key={slot.id}
                   slot={slot}
                   venue={venue}
-                  onBookSlot={onBookSlot}
-                  isBooking={isBooking}
-                  selectedDate={selectedDate}
-                  hasEnoughCoins={slotCoins > 0}
+                  onBook={() => onBookSlot(slot.id, slot.venueId)}
+                  disableBooking={isBooking || slotCoins <= 0}
                 />
               );
             })}

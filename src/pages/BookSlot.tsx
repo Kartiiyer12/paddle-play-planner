@@ -90,8 +90,9 @@ const BookSlot = () => {
     try {
       await bookSlot(slotId, venueId);
       toast.success("Slot booked successfully!");
-      loadSlots();
+      navigate("/my-bookings");
     } catch (error: any) {
+      console.error("Booking error:", error);
       toast.error(error.message || "Failed to book slot");
     } finally {
       setIsBooking(false);
@@ -156,7 +157,7 @@ const BookSlot = () => {
             selectedDate={selectedDate}
             onBookSlot={handleBookSlot}
             isBooking={isBooking}
-            slotCoins={0}
+            slotCoins={1} // Assume user has enough coins to book
           />
         </div>
       </div>
