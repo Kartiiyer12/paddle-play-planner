@@ -84,25 +84,38 @@ const BookSlot = () => {
 
   useEffect(() => {
     if (selectedVenue) {
-      loadSlots();
+      loadAllSlots();
     } else {
       setAvailableSlots([]);
     }
-  }, [selectedVenue, selectedDateIndex]);
+  }, [selectedVenue]);
 
-  const loadSlots = async () => {
+  useEffect(() => {
+    // Filter slots based on selected date when date tab changes
+    filterSlotsByDate();
+  }, [selectedDateIndex]);
+
+  const loadAllSlots = async () => {
     if (!selectedVenue) return;
     
     try {
-      const selectedDate = nextSevenDays[selectedDateIndex];
-      const dateString = format(selectedDate, "yyyy-MM-dd");
-      
       const data = await getSlotsByVenue(selectedVenue);
-      const filteredSlots = data.filter(slot => slot.date === dateString);
-      setAvailableSlots(filteredSlots);
+      setAvailableSlots(data);
+      // Initial filtering based on the default selected date
+      filterSlotsByDate();
     } catch (error) {
       toast.error("Failed to load available slots");
     }
+  };
+
+  const filterSlotsByDate = () => {
+    // This function filters the available slots based on the selected date
+    const selectedDate = nextSevenDays[selectedDateIndex];
+    const dateString = format(selectedDate, "yyyy-MM-dd");
+    
+    // We're not fetching from API again, just filtering local state
+    const filteredSlots = availableSlots.filter(slot => slot.date === dateString);
+    setAvailableSlots(filteredSlots);
   };
 
   const handleBookSlot = async (slotId: string, venueId: string) => {
@@ -150,15 +163,25 @@ const BookSlot = () => {
           <Card className="mb-8">
             <CardContent className="p-6">
               <div className="grid grid-cols-1 gap-6">
-                <VenueSelector
-                  venues={venues}
-                  selectedVenue={selectedVenue}
-                  onVenueChange={setSelectedVenue}
-                  isLoading={isLoading}
-                />
+                {/* Simplified venue selector */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Select Venue</label>
+                  <select 
+                    value={selectedVenue || ""}
+                    onChange={(e) => setSelectedVenue(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                    disabled={isLoading}
+                  >
+                    {venues.map((venue) => (
+                      <option key={venue.id} value={venue.id}>
+                        {venue.name} - {venue.city}, {venue.state}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
                 <div>
-                  <h3 className="text-sm font-medium mb-3">Select Date</h3>
+                  <h3 className="text-sm font-medium mb-3">Available Days</h3>
                   <Tabs 
                     value={selectedDateIndex.toString()} 
                     onValueChange={(value) => setSelectedDateIndex(parseInt(value))}
