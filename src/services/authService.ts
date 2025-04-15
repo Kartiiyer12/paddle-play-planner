@@ -1,6 +1,6 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/models/types";
+import { getProfile } from "./profileService";
 
 export const getCurrentUser = async (): Promise<User | null> => {
   const { data, error } = await supabase.auth.getUser();
@@ -19,8 +19,19 @@ export const getCurrentUser = async (): Promise<User | null> => {
     name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
     isVerified: data.user.email_confirmed_at !== null,
     role: role,
-    createdAt: data.user.created_at || new Date().toISOString()
+    createdAt: data.user.created_at || new Date().toISOString(),
+    preferredVenues: [] // Initialize with empty array
   };
+  
+  // Try to get preferred venues from profile
+  try {
+    const profile = await getProfile(user.id);
+    if (profile && profile.preferred_venues) {
+      user.preferredVenues = profile.preferred_venues;
+    }
+  } catch (error) {
+    console.error("Error getting user profile:", error);
+  }
   
   return user;
 };

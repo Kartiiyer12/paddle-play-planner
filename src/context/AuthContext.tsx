@@ -3,6 +3,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { User } from '@/models/types';
 import { getCurrentUser } from '@/services/authService';
 import { supabase } from '@/integrations/supabase/client';
+import { getProfile } from '@/services/profileService';
 
 interface AuthContextType {
   user: User | null;
@@ -35,6 +36,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Use setTimeout to prevent potential deadlocks with Supabase auth
             setTimeout(async () => {
               const userData = await getCurrentUser();
+              
+              // If we have a user, fetch their profile to get preferred venues
+              if (userData) {
+                const profile = await getProfile(userData.id);
+                if (profile && profile.preferred_venues) {
+                  userData.preferredVenues = profile.preferred_venues;
+                } else {
+                  userData.preferredVenues = [];
+                }
+              }
+              
               setUser(userData);
               setIsLoading(false);
             }, 0);
@@ -56,6 +68,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data } = await supabase.auth.getSession();
         if (data.session) {
           const userData = await getCurrentUser();
+          
+          // If we have a user, fetch their profile to get preferred venues
+          if (userData) {
+            const profile = await getProfile(userData.id);
+            if (profile && profile.preferred_venues) {
+              userData.preferredVenues = profile.preferred_venues;
+            } else {
+              userData.preferredVenues = [];
+            }
+          }
+          
           setUser(userData);
         } else {
           setUser(null);
