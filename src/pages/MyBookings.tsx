@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,7 @@ import BackButton from "@/components/navigation/BackButton";
 import { Calendar, Clock, MapPin } from "lucide-react";
 import { BookingWithDetails } from "@/models/types";
 import { useAuth } from "@/context/AuthContext";
-import { getUserBookings, cancelBooking } from "@/services/bookingService";
+import { getUserBookings, cancelBooking } from "@/services/userBookingService";
 
 const MyBookings = () => {
   const navigate = useNavigate();
@@ -35,7 +34,6 @@ const MyBookings = () => {
     setIsLoading(true);
     try {
       const bookingsData = await getUserBookings();
-      // Sort bookings by date in descending order (newest first)
       bookingsData.sort((a, b) => new Date(b.slot.date).getTime() - new Date(a.slot.date).getTime());
       setBookings(bookingsData);
     } catch (error) {
@@ -51,7 +49,6 @@ const MyBookings = () => {
       await cancelBooking(bookingId);
       toast.success("Booking cancelled successfully!");
       
-      // Reload bookings
       await loadBookings();
     } catch (error: any) {
       toast.error(error.message || "Failed to cancel booking");

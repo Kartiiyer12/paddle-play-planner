@@ -11,7 +11,7 @@ import BackButton from "@/components/navigation/BackButton";
 import { Slot, Venue } from "@/models/types";
 import { getVenues } from "@/services/venueService";
 import { getSlotsByVenue } from "@/services/slotService";
-import { bookSlot } from "@/services/bookingService";
+import { bookSlot } from "@/services/userBookingService";
 import { useAuth } from "@/context/AuthContext";
 
 // Import refactored components
