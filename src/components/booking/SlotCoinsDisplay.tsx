@@ -5,10 +5,10 @@ import { Coins } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface SlotCoinsDisplayProps {
-  slotCoins: number;
+  coins: number; // Changed from slotCoins to coins
 }
 
-const SlotCoinsDisplay = ({ slotCoins }: SlotCoinsDisplayProps) => {
+const SlotCoinsDisplay = ({ coins }: SlotCoinsDisplayProps) => {
   const navigate = useNavigate();
   
   return (
@@ -19,7 +19,7 @@ const SlotCoinsDisplay = ({ slotCoins }: SlotCoinsDisplayProps) => {
             <h3 className="font-medium text-gray-900">Your Slot Coins</h3>
             <div className="flex items-center mt-1">
               <Coins className="h-5 w-5 text-pickleball-purple mr-2" />
-              <p className="text-xl font-bold text-pickleball-purple">{slotCoins} Coins</p>
+              <p className="text-xl font-bold text-pickleball-purple">{coins} Coins</p>
             </div>
           </div>
           <Button 

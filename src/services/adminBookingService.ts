@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Booking, BookingWithDetails } from "@/models/types";
 
@@ -130,7 +129,7 @@ export const getSlotBookings = async (slotId: string) => {
         userId: booking.user_id,
         slotId: booking.slot_id,
         venueId: booking.venue_id,
-        status: booking.status,
+        status: booking.status as "confirmed" | "cancelled",
         createdAt: booking.created_at,
         checkedIn: booking.checked_in || false,
         userName: booking.user_name || 'Unknown Player',
