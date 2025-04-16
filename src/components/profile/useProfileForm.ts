@@ -28,6 +28,8 @@ export const useProfileForm = (userId: string, onSaved?: () => void) => {
       setIsLoading(true);
       try {
         const profile = await getProfile(userId);
+        console.log("Loaded profile data:", profile);
+        
         if (profile) {
           setFormData({
             name: profile.name || "",
@@ -72,10 +74,12 @@ export const useProfileForm = (userId: string, onSaved?: () => void) => {
     setIsSaving(true);
     
     try {
+      console.log("Submitting profile data:", formData);
+      
       // Fix: Ensure age is properly converted to number or undefined
       const ageValue = formData.age ? parseInt(formData.age) : undefined;
       
-      await updateProfile(userId, {
+      const result = await updateProfile(userId, {
         name: formData.name,
         age: ageValue,
         sex: formData.sex,
@@ -83,8 +87,10 @@ export const useProfileForm = (userId: string, onSaved?: () => void) => {
         preferred_venues: formData.preferredVenues
       });
       
-      toast.success("Profile updated successfully");
-      if (onSaved) onSaved();
+      if (result) {
+        toast.success("Profile updated successfully");
+        if (onSaved) onSaved();
+      }
     } catch (error) {
       console.error("Profile update error:", error);
       toast.error("Failed to update profile");
