@@ -86,67 +86,88 @@ export const getSlotBookings = async (slotId: string) => {
     throw new Error("Only admins can access slot bookings");
   }
 
+  // Don't use foreign key relationships in the query, use direct queries instead
   const { data, error } = await supabase
     .from("bookings")
-    .select(`
-      *,
-      profiles:user_id (name),
-      venues:venue_id (*),
-      slots:slot_id (*)
-    `)
+    .select("*")
     .eq("slot_id", slotId)
-    .eq("status", "confirmed")
-    .order("created_at");
+    .eq("status", "confirmed");
   
   if (error) {
+    console.error("Error fetching slot bookings:", error);
     throw error;
   }
   
-  if (!data) return [];
+  if (!data || data.length === 0) return [];
   
-  return data.map(booking => {
-    const profileData = booking.profiles || { name: 'Unknown Player' };
-    // Safely handle the profile data whether it's an error or actual data
-    const userName = booking.user_name || 
-                    (profileData && typeof profileData === 'object' && 'name' in profileData ? 
-                      profileData.name : 'Unknown Player');
-    
-    return {
-      id: booking.id,
-      userId: booking.user_id,
-      slotId: booking.slot_id,
-      venueId: booking.venue_id,
-      status: booking.status,
-      createdAt: booking.created_at,
-      checkedIn: booking.checked_in || false,
-      userName: userName,
-      venue: {
-        id: booking.venues.id,
-        name: booking.venues.name,
-        address: booking.venues.address,
-        city: booking.venues.city,
-        state: booking.venues.state,
-        zip: booking.venues.zip || '',
-        description: booking.venues.description || '',
-        courtCount: booking.venues.court_count,
-        imageUrl: booking.venues.image_url || '',
-        createdAt: booking.venues.created_at,
-        updatedAt: booking.venues.updated_at
-      },
-      slot: {
-        id: booking.slots.id,
-        venueId: booking.slots.venue_id,
-        date: booking.slots.date,
-        dayOfWeek: booking.slots.day_of_week || '',
-        startTime: booking.slots.start_time,
-        endTime: booking.slots.end_time,
-        maxPlayers: booking.slots.max_players,
-        currentPlayers: booking.slots.current_players,
-        createdAt: booking.slots.created_at,
-        updatedAt: booking.slots.updated_at
-      }
-    };
-  }) as BookingWithDetails[];
+  // Create an array to hold the enhanced booking data
+  const enhancedBookings: BookingWithDetails[] = [];
+  
+  // For each booking, fetch the related venue and slot data
+  for (const booking of data) {
+    try {
+      // Get venue data
+      const { data: venueData, error: venueError } = await supabase
+        .from("venues")
+        .select("*")
+        .eq("id", booking.venue_id)
+        .single();
+        
+      if (venueError) throw venueError;
+      
+      // Get slot data
+      const { data: slotData, error: slotError } = await supabase
+        .from("slots")
+        .select("*")
+        .eq("id", booking.slot_id)
+        .single();
+        
+      if (slotError) throw slotError;
+      
+      // Add to enhanced bookings
+      enhancedBookings.push({
+        id: booking.id,
+        userId: booking.user_id,
+        slotId: booking.slot_id,
+        venueId: booking.venue_id,
+        status: booking.status,
+        createdAt: booking.created_at,
+        checkedIn: booking.checked_in || false,
+        userName: booking.user_name || 'Unknown Player',
+        venue: {
+          id: venueData.id,
+          name: venueData.name,
+          address: venueData.address,
+          city: venueData.city,
+          state: venueData.state,
+          zip: venueData.zip || '',
+          description: venueData.description || '',
+          courtCount: venueData.court_count,
+          imageUrl: venueData.image_url || '',
+          createdAt: venueData.created_at,
+          updatedAt: venueData.updated_at
+        },
+        slot: {
+          id: slotData.id,
+          venueId: slotData.venue_id,
+          date: slotData.date,
+          dayOfWeek: slotData.day_of_week || '',
+          startTime: slotData.start_time,
+          endTime: slotData.end_time,
+          maxPlayers: slotData.max_players,
+          currentPlayers: slotData.current_players,
+          createdAt: slotData.created_at,
+          updatedAt: slotData.updated_at
+        }
+      });
+    } catch (error) {
+      console.error("Error processing booking data:", error);
+      // Continue with other bookings even if one fails
+    }
+  }
+  
+  console.log("Enhanced bookings:", enhancedBookings);
+  return enhancedBookings;
 };
 
 /**

@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Booking, BookingWithDetails } from "@/models/types";
+import { isAfter, parseISO, startOfDay } from "date-fns";
 
 /**
  * Gets the current user's bookings
@@ -62,6 +63,39 @@ export const getUserBookings = async () => {
       updatedAt: booking.slots.updated_at
     }
   })) as BookingWithDetails[];
+};
+
+/**
+ * Gets the IDs of slots booked by the current user
+ */
+export const getUserBookedSlotIds = async () => {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  
+  if (userError || !userData.user) {
+    throw userError || new Error("User not authenticated");
+  }
+
+  // Get only future bookings
+  const today = startOfDay(new Date()).toISOString();
+  
+  const { data, error } = await supabase
+    .from("bookings")
+    .select("slot_id, slots:slot_id(date)")
+    .eq("user_id", userData.user.id)
+    .eq("status", "confirmed");
+  
+  if (error) {
+    throw error;
+  }
+  
+  // Filter to only return slots in the future
+  const currentDate = startOfDay(new Date());
+  return data
+    .filter(item => {
+      const slotDate = parseISO(item.slots.date);
+      return isAfter(slotDate, currentDate) || slotDate.toDateString() === currentDate.toDateString();
+    })
+    .map(item => item.slot_id);
 };
 
 /**

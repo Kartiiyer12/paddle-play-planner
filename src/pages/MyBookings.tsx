@@ -13,6 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getUserBookings, cancelBooking } from "@/services/userBookingService";
 import { updateBookingCheckInStatus } from "@/services/checkInService";
 import { Badge } from "@/components/ui/badge";
+import { isAfter, parseISO, startOfDay } from "date-fns";
 
 const MyBookings = () => {
   const navigate = useNavigate();
@@ -38,8 +39,16 @@ const MyBookings = () => {
     setIsLoading(true);
     try {
       const bookingsData = await getUserBookings();
-      bookingsData.sort((a, b) => new Date(b.slot.date).getTime() - new Date(a.slot.date).getTime());
-      setBookings(bookingsData);
+      
+      // Filter out past bookings
+      const today = startOfDay(new Date());
+      const futureBookings = bookingsData.filter(booking => {
+        const bookingDate = parseISO(booking.slot.date);
+        return isAfter(bookingDate, today) || bookingDate.toDateString() === today.toDateString();
+      });
+      
+      futureBookings.sort((a, b) => new Date(a.slot.date).getTime() - new Date(b.slot.date).getTime());
+      setBookings(futureBookings);
     } catch (error) {
       toast.error("Failed to load bookings");
     } finally {

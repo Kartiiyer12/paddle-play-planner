@@ -14,17 +14,46 @@ export const updateProfile = async (userId: string, profileData: ProfileData) =>
     // Add better logging to diagnose issues
     console.log("Updating profile for user:", userId, "with data:", profileData);
     
-    const { error } = await supabase
+    // First check if the profile exists
+    const { data: existingProfile, error: checkError } = await supabase
       .from("profiles")
-      .upsert({
-        id: userId,
-        ...profileData,
-        updated_at: new Date().toISOString()
-      });
+      .select("id")
+      .eq("id", userId)
+      .single();
     
-    if (error) {
-      console.error("Supabase error updating profile:", error);
-      throw error;
+    if (checkError && checkError.code !== 'PGRST116') {
+      // Error other than "no rows returned"
+      console.error("Error checking profile existence:", checkError);
+      throw checkError;
+    }
+
+    let result;
+    
+    if (!existingProfile) {
+      // Profile doesn't exist, insert it
+      console.log("Profile doesn't exist, creating new profile");
+      result = await supabase
+        .from("profiles")
+        .insert({
+          id: userId,
+          ...profileData,
+          updated_at: new Date().toISOString()
+        });
+    } else {
+      // Profile exists, update it
+      console.log("Profile exists, updating profile");
+      result = await supabase
+        .from("profiles")
+        .update({
+          ...profileData,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", userId);
+    }
+    
+    if (result.error) {
+      console.error("Supabase error updating profile:", result.error);
+      throw result.error;
     }
     
     console.log("Profile updated successfully");

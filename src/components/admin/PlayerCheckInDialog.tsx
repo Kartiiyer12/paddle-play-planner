@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BookingWithDetails } from "@/models/types";
 import { getSlotBookings } from "@/services/adminBookingService";
-import { updateBookingCheckIn } from "@/services/checkInService";
+import { updateBookingCheckInStatus } from "@/services/checkInService";
 import { toast } from "sonner";
 import { BadgeCheck, Clock, CalendarClock, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -40,7 +40,7 @@ const PlayerCheckInDialog = ({ slotId, venueId, onClose }: PlayerCheckInDialogPr
 
   const handleCheckInToggle = async (bookingId: string, isCheckedIn: boolean) => {
     try {
-      await updateBookingCheckIn(bookingId, isCheckedIn);
+      await updateBookingCheckInStatus(bookingId, isCheckedIn);
       
       // Update the local state
       setBookings(bookings.map(booking => 

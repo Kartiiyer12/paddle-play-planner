@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Slot } from "@/models/types";
 
@@ -6,13 +5,13 @@ export const getSlots = async () => {
   const { data, error } = await supabase
     .from("slots")
     .select("*")
-    .order("date")
-    .order("start_time");
-  
+    .order("date", { ascending: true })
+    .order("start_time", { ascending: true });
+
   if (error) {
     throw error;
   }
-  
+
   return data.map(slot => ({
     id: slot.id,
     venueId: slot.venue_id,
@@ -32,13 +31,13 @@ export const getSlotsByVenue = async (venueId: string) => {
     .from("slots")
     .select("*")
     .eq("venue_id", venueId)
-    .order("date")
-    .order("start_time");
-  
+    .order("date", { ascending: true })
+    .order("start_time", { ascending: true });
+
   if (error) {
     throw error;
   }
-  
+
   return data.map(slot => ({
     id: slot.id,
     venueId: slot.venue_id,
@@ -53,17 +52,23 @@ export const getSlotsByVenue = async (venueId: string) => {
   })) as Slot[];
 };
 
-export const getSlotsByDate = async (date: string) => {
-  const { data, error } = await supabase
+export const getSlotsByDate = async (date: string, venueId?: string | null) => {
+  let query = supabase
     .from("slots")
     .select("*")
     .eq("date", date)
-    .order("start_time");
-  
+    .order("start_time", { ascending: true });
+
+  if (venueId) {
+    query = query.eq("venue_id", venueId);
+  }
+
+  const { data, error } = await query;
+
   if (error) {
     throw error;
   }
-  
+
   return data.map(slot => ({
     id: slot.id,
     venueId: slot.venue_id,
@@ -78,17 +83,50 @@ export const getSlotsByDate = async (date: string) => {
   })) as Slot[];
 };
 
-export const getSlotById = async (id: string) => {
-  const { data, error } = await supabase
+export const getSlotsByDateRange = async (startDate: string, endDate: string, venueId?: string | null) => {
+  let query = supabase
     .from("slots")
     .select("*")
-    .eq("id", id)
-    .single();
-  
+    .gte("date", startDate)
+    .lte("date", endDate)
+    .order("date", { ascending: true })
+    .order("start_time", { ascending: true });
+
+  if (venueId) {
+    query = query.eq("venue_id", venueId);
+  }
+
+  const { data, error } = await query;
+
   if (error) {
     throw error;
   }
-  
+
+  return data.map(slot => ({
+    id: slot.id,
+    venueId: slot.venue_id,
+    date: slot.date,
+    dayOfWeek: slot.day_of_week,
+    startTime: slot.start_time,
+    endTime: slot.end_time,
+    maxPlayers: slot.max_players,
+    currentPlayers: slot.current_players,
+    createdAt: slot.created_at,
+    updatedAt: slot.updated_at
+  })) as Slot[];
+};
+
+export const getSlotById = async (slotId: string) => {
+  const { data, error } = await supabase
+    .from("slots")
+    .select("*")
+    .eq("id", slotId)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
   return {
     id: data.id,
     venueId: data.venue_id,

@@ -1,37 +1,32 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { format, addDays } from "date-fns";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import BackButton from "@/components/navigation/BackButton";
-import { Slot, Venue } from "@/models/types";
-import { getVenues } from "@/services/venueService";
-import { getSlotsByVenue } from "@/services/slotService";
-import { bookSlot, getUserBookings } from "@/services/userBookingService";
+import { getVenues } from "@/services/venueService"; 
+import { getSlotsByDateRange } from "@/services/slotService";
+import { bookSlot, getUserBookedSlotIds } from "@/services/userBookingService";
+import { Venue, Slot } from "@/models/types";
 import { useAuth } from "@/context/AuthContext";
-
-// Import refactored components
 import VenueSelector from "@/components/booking/VenueSelector";
 import AvailableSlots from "@/components/booking/AvailableSlots";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import SlotCoinsDisplay from "@/components/booking/SlotCoinsDisplay";
+import { add, format } from "date-fns";
 
 const BookSlot = () => {
   const navigate = useNavigate();
   const { user, isLoading: isLoadingAuth } = useAuth();
+  
+  const [venues, setVenues] = useState<Venue[]>([]);
   const [selectedVenue, setSelectedVenue] = useState<string | null>(null);
   const [availableSlots, setAvailableSlots] = useState<Slot[]>([]);
-  const [bookedSlotIds, setBookedSlotIds] = useState<string[]>([]);
-  const [venues, setVenues] = useState<Venue[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isBooking, setIsBooking] = useState(false);
-  const [selectedDateIndex, setSelectedDateIndex] = useState(0);
-
-  // Create an array of the next 7 days
-  const nextSevenDays = Array.from({ length: 7 }, (_, i) => addDays(new Date(), i));
+  const [userBookedSlotIds, setUserBookedSlotIds] = useState<string[]>([]);
+  
+  // Slot coins
+  const [slotCoins, setSlotCoins] = useState(3); // Default coins, can be updated from user profile later
 
   useEffect(() => {
     if (!isLoadingAuth) {
@@ -43,102 +38,94 @@ const BookSlot = () => {
 
       loadInitialData();
     }
-  }, [navigate, user, isLoadingAuth]);
+  }, [user, isLoadingAuth, navigate]);
 
   const loadInitialData = async () => {
     setIsLoading(true);
     try {
-      const [venuesData, userBookings] = await Promise.all([
-        getVenues(),
-        getUserBookings()
-      ]);
-      
-      setVenues(venuesData);
-      setBookedSlotIds(userBookings.map(booking => booking.slotId));
-
-      // Get user's preferred venue from profile or use first venue
-      if (venuesData.length > 0) {
-        // Try to get preferred venue
-        const userPreferredVenues = user?.preferredVenues || [];
-        let preferredVenueId = null;
-        
-        if (userPreferredVenues.length > 0) {
-          // Check if any of the preferred venues exists in the venues list
-          for (const venueId of userPreferredVenues) {
-            if (venuesData.some(v => v.id === venueId)) {
-              preferredVenueId = venueId;
-              break;
-            }
-          }
-        }
-        
-        // If preferred venue is not found, use the first venue
-        setSelectedVenue(preferredVenueId || venuesData[0].id);
+      // Load user's booked slot IDs first
+      try {
+        const bookedSlotIds = await getUserBookedSlotIds();
+        setUserBookedSlotIds(bookedSlotIds);
+      } catch (error) {
+        console.error("Error loading booked slots:", error);
+        // Continue with empty booked slots
       }
+      
+      // Load venues
+      const venuesData = await getVenues();
+      setVenues(venuesData);
+
+      // Try to set default venue from user preferred venues
+      if (user?.preferredVenues?.length) {
+        setSelectedVenue(user.preferredVenues[0]);
+      }
+
+      // Load slots for next 7 days
+      await loadSlotsForNext7Days();
+      
     } catch (error) {
-      toast.error("Failed to load venues");
+      console.error("Error loading initial data:", error);
+      toast.error("Failed to load venues and slots");
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (selectedVenue) {
-      loadAllSlots();
-    } else {
-      setAvailableSlots([]);
-    }
-  }, [selectedVenue]);
-
-  useEffect(() => {
-    // Filter slots based on selected date when date tab changes
-    filterSlotsByDate();
-  }, [selectedDateIndex]);
-
-  const loadAllSlots = async () => {
-    if (!selectedVenue) return;
-    
+  const loadSlotsForNext7Days = async (venueId?: string) => {
     try {
-      const data = await getSlotsByVenue(selectedVenue);
-      setAvailableSlots(data);
-      // Initial filtering based on the default selected date
-      filterSlotsByDate();
+      const today = new Date();
+      const nextWeek = add(today, { days: 7 });
+      
+      const startDate = format(today, 'yyyy-MM-dd');
+      const endDate = format(nextWeek, 'yyyy-MM-dd');
+      
+      const slotsData = await getSlotsByDateRange(startDate, endDate, venueId || selectedVenue);
+      
+      // Filter out slots that user has already booked
+      const filteredSlots = slotsData.filter(slot => !userBookedSlotIds.includes(slot.id));
+      
+      setAvailableSlots(filteredSlots);
     } catch (error) {
+      console.error("Error loading slots:", error);
       toast.error("Failed to load available slots");
     }
   };
 
-  const filterSlotsByDate = () => {
-    // This function filters the available slots based on the selected date
-    const selectedDate = nextSevenDays[selectedDateIndex];
-    const dateString = format(selectedDate, "yyyy-MM-dd");
-    
-    // We're not fetching from API again, just filtering local state
-    const filteredSlots = availableSlots.filter(slot => slot.date === dateString);
-    setAvailableSlots(filteredSlots);
+  const handleVenueChange = async (venueId: string) => {
+    setSelectedVenue(venueId);
+    await loadSlotsForNext7Days(venueId);
   };
 
   const handleBookSlot = async (slotId: string, venueId: string) => {
     if (!user) {
       toast.error("You must be logged in to book slots");
-      navigate("/login");
       return;
     }
 
     setIsBooking(true);
     try {
       await bookSlot(slotId, venueId);
+      
       toast.success("Slot booked successfully!");
-      navigate("/my-bookings");
+      
+      // Update user's booked slot IDs
+      setUserBookedSlotIds([...userBookedSlotIds, slotId]);
+      
+      // Update available slots
+      await loadSlotsForNext7Days();
+      
+      // Update slot coins
+      setSlotCoins(prevCoins => Math.max(0, prevCoins - 1));
+      
     } catch (error: any) {
-      console.error("Booking error:", error);
       toast.error(error.message || "Failed to book slot");
     } finally {
       setIsBooking(false);
     }
   };
 
-  if (isLoadingAuth || isLoading) {
+  if (isLoadingAuth || (isLoading && !availableSlots.length)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>Loading...</p>
@@ -152,72 +139,36 @@ const BookSlot = () => {
 
       <div className="flex-grow pt-24 pb-16 px-4 bg-gray-50">
         <div className="container mx-auto">
-          <div className="mb-6">
-            <BackButton to="/" />
-            <h1 className="text-3xl font-bold text-gray-900 mt-4">Book a Slot</h1>
-            <p className="text-gray-600 mt-2">
-              Find and book available pickleball slots at your preferred venue
-            </p>
-          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Book a Slot</h1>
+          <p className="text-gray-600 mb-8">
+            Find and book available pickleball sessions
+          </p>
 
-          <Card className="mb-8">
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 gap-6">
-                {/* Simplified venue selector */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Select Venue</label>
-                  <select 
-                    value={selectedVenue || ""}
-                    onChange={(e) => setSelectedVenue(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                    disabled={isLoading}
-                  >
-                    {venues.map((venue) => (
-                      <option key={venue.id} value={venue.id}>
-                        {venue.name} - {venue.city}, {venue.state}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-medium mb-3">Available Days</h3>
-                  <Tabs 
-                    value={selectedDateIndex.toString()} 
-                    onValueChange={(value) => setSelectedDateIndex(parseInt(value))}
-                    className="w-full"
-                  >
-                    <TabsList className="grid grid-cols-7 w-full">
-                      {nextSevenDays.map((day, index) => (
-                        <TabsTrigger 
-                          key={index} 
-                          value={index.toString()}
-                          className="text-xs sm:text-sm flex flex-col py-2"
-                        >
-                          <span className="font-medium">
-                            {format(day, 'EEE')}
-                          </span>
-                          <span>
-                            {format(day, 'MMM d')}
-                          </span>
-                        </TabsTrigger>
-                      ))}
-                    </TabsList>
-                  </Tabs>
+          <div className="grid grid-cols-1 md:grid-cols-[300px,1fr] gap-8">
+            <div className="space-y-8">
+              <SlotCoinsDisplay coins={slotCoins} />
+              
+              <div className="bg-white p-6 rounded-lg shadow-sm border">
+                <div className="space-y-6">
+                  <VenueSelector
+                    venues={venues}
+                    selectedVenue={selectedVenue}
+                    onVenueChange={handleVenueChange}
+                    isLoading={isLoading}
+                  />
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          <AvailableSlots
-            availableSlots={availableSlots.filter(slot => !bookedSlotIds.includes(slot.id))}
-            venues={venues}
-            selectedVenue={selectedVenue}
-            selectedDate={nextSevenDays[selectedDateIndex]}
-            onBookSlot={handleBookSlot}
-            isBooking={isBooking}
-            slotCoins={1} // Assume user has enough coins to book
-          />
+            <AvailableSlots
+              availableSlots={availableSlots}
+              venues={venues}
+              selectedVenue={selectedVenue}
+              onBookSlot={handleBookSlot}
+              isBooking={isBooking}
+              slotCoins={slotCoins}
+            />
+          </div>
         </div>
       </div>
 
