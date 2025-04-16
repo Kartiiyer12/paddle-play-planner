@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -47,11 +46,8 @@ const Register = () => {
     }
 
     try {
-      // Check if admin code is correct (this is a simple implementation)
-      const isAdmin = showAdminField && formData.adminCode === "ADMIN123";
-      
-      // Register the user with the appropriate role
-      await registerUser(formData.email, formData.password, formData.name, isAdmin ? 'admin' : 'user');
+      // Register the user
+      await registerUser(formData.email, formData.password, formData.name);
 
       // Success, show a message and redirect
       toast.success("Registration successful! Please check your email to verify your account.");

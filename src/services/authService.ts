@@ -20,7 +20,9 @@ export const getCurrentUser = async (): Promise<User | null> => {
       id: user.id,
       email: user.email || '',
       name: metadata?.full_name || user.email?.split('@')[0] || 'User',
+      isVerified: user.email_confirmed_at !== null,
       role: metadata?.role || 'user',
+      createdAt: user.created_at || new Date().toISOString(),
       preferredVenues: [] // This will be populated from profiles table in AuthContext
     };
   } catch (error) {
@@ -30,7 +32,7 @@ export const getCurrentUser = async (): Promise<User | null> => {
 };
 
 // Log in a user with email and password
-export const loginUser = async (email: string, password: string) => {
+export const loginUser = async (email: string, password: string): Promise<User | null> => {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password
@@ -40,7 +42,23 @@ export const loginUser = async (email: string, password: string) => {
     throw error;
   }
   
-  return data;
+  if (!data.user) {
+    return null;
+  }
+  
+  // Extract metadata from user object
+  const metadata = data.user.user_metadata;
+  
+  // Map Supabase user to our User model
+  return {
+    id: data.user.id,
+    email: data.user.email || '',
+    name: metadata?.full_name || data.user.email?.split('@')[0] || 'User',
+    isVerified: data.user.email_confirmed_at !== null,
+    role: metadata?.role || 'user',
+    createdAt: data.user.created_at || new Date().toISOString(),
+    preferredVenues: [] // This will be populated from profiles table in AuthContext
+  };
 };
 
 // Register a new user
