@@ -11,7 +11,6 @@ import { Venue, Slot } from "@/models/types";
 import { useAuth } from "@/context/AuthContext";
 import VenueSelector from "@/components/booking/VenueSelector";
 import AvailableSlots from "@/components/booking/AvailableSlots";
-import SlotCoinsDisplay from "@/components/booking/SlotCoinsDisplay";
 import { add, format } from "date-fns";
 
 const BookSlot = () => {
@@ -25,9 +24,6 @@ const BookSlot = () => {
   const [isBooking, setIsBooking] = useState(false);
   const [userBookedSlotIds, setUserBookedSlotIds] = useState<string[]>([]);
   
-  // Slot coins
-  const [slotCoins, setSlotCoins] = useState(3); // Default coins, can be updated from user profile later
-
   useEffect(() => {
     if (!isLoadingAuth) {
       if (!user) {
@@ -115,9 +111,6 @@ const BookSlot = () => {
       // Update available slots
       await loadSlotsForNext7Days();
       
-      // Update slot coins
-      setSlotCoins(prevCoins => Math.max(0, prevCoins - 1));
-      
     } catch (error: any) {
       toast.error(error.message || "Failed to book slot");
     } finally {
@@ -146,8 +139,6 @@ const BookSlot = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-[300px,1fr] gap-8">
             <div className="space-y-8">
-              <SlotCoinsDisplay coins={slotCoins} />
-              
               <div className="bg-white p-6 rounded-lg shadow-sm border">
                 <div className="space-y-6">
                   <VenueSelector
@@ -166,7 +157,7 @@ const BookSlot = () => {
               selectedVenue={selectedVenue}
               onBookSlot={handleBookSlot}
               isBooking={isBooking}
-              slotCoins={slotCoins}
+              slotCoins={999} // Set a large value to prevent issues with bookings
             />
           </div>
         </div>

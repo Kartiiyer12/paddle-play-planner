@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Booking, BookingWithDetails } from "@/models/types";
 
@@ -85,25 +86,24 @@ export const getSlotBookings = async (slotId: string) => {
     throw new Error("Only admins can access slot bookings");
   }
 
-  // Don't use foreign key relationships in the query, use direct queries instead
-  const { data, error } = await supabase
+  // First get all confirmed bookings for this slot
+  const { data: bookingsData, error: bookingsError } = await supabase
     .from("bookings")
     .select("*")
     .eq("slot_id", slotId)
     .eq("status", "confirmed");
   
-  if (error) {
-    console.error("Error fetching slot bookings:", error);
-    throw error;
+  if (bookingsError) {
+    console.error("Error fetching slot bookings:", bookingsError);
+    throw bookingsError;
   }
   
-  if (!data || data.length === 0) return [];
+  if (!bookingsData || bookingsData.length === 0) return [];
   
-  // Create an array to hold the enhanced booking data
+  // For each booking, fetch user details from profiles
   const enhancedBookings: BookingWithDetails[] = [];
   
-  // For each booking, fetch the related venue and slot data
-  for (const booking of data) {
+  for (const booking of bookingsData) {
     try {
       // Get venue data
       const { data: venueData, error: venueError } = await supabase
@@ -202,7 +202,7 @@ export const updateBookingStatus = async (bookingId: string, status: 'confirmed'
     userId: data[0].user_id,
     slotId: data[0].slot_id,
     venueId: data[0].venue_id,
-    status: data[0].status,
+    status: data[0].status as "confirmed" | "cancelled",
     createdAt: data[0].created_at,
     checkedIn: data[0].checked_in || false,
     userName: data[0].user_name || ''

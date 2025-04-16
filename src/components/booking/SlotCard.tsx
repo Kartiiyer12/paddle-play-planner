@@ -1,125 +1,75 @@
 
-import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Clock, MapPin, UserCheck } from "lucide-react";
-import { Slot, Venue } from "@/models/types";
-import { useAuth } from "@/context/AuthContext";
-import { cn } from "@/lib/utils";
-import { updateBookingCheckInStatus } from "@/services/bookingService";
-import { toast } from "sonner";
+import { Slot } from "@/models/types";
+import { format } from "date-fns";
+import { CalendarCheck, Clock, Users } from "lucide-react";
 
 interface SlotCardProps {
   slot: Slot;
-  venue: Venue;
-  isBooked?: boolean;
-  bookingId?: string;
-  isCheckedIn?: boolean;
-  onBook?: () => void;
-  disableBooking?: boolean;
+  venueName: string;
+  onBookSlot: (slotId: string, venueId: string) => void;
+  isBooking: boolean;
+  canBook: boolean;
 }
 
-const SlotCard = ({
-  slot,
-  venue,
-  isBooked = false,
-  bookingId,
-  isCheckedIn = false,
-  onBook,
-  disableBooking = false
+const SlotCard = ({ 
+  slot, 
+  venueName, 
+  onBookSlot, 
+  isBooking,
+  canBook 
 }: SlotCardProps) => {
-  const { user } = useAuth();
-  const [checkingIn, setCheckingIn] = useState(false);
-  const isFull = slot.currentPlayers >= slot.maxPlayers;
-  const isUpcoming = new Date(`${slot.date}T${slot.startTime}`) > new Date();
-  const canCheckIn = isBooked && isUpcoming && !isCheckedIn;
-
-  const handleCheckIn = async () => {
-    if (!bookingId) return;
-    
-    try {
-      setCheckingIn(true);
-      await updateBookingCheckInStatus(bookingId, true);
-      toast.success("You're checked in! Enjoy your game.");
-    } catch (error: any) {
-      toast.error(error.message || "Check-in failed");
-    } finally {
-      setCheckingIn(false);
-    }
-  };
-
+  
+  // Format times for display
+  const startTime = format(new Date(`2000-01-01T${slot.startTime}`), 'h:mm a');
+  const endTime = format(new Date(`2000-01-01T${slot.endTime}`), 'h:mm a');
+  
+  // Available spots
+  const availableSpots = slot.maxPlayers - slot.currentPlayers;
+  
+  // Check if slot is full
+  const isFull = availableSpots <= 0;
+  
   return (
-    <Card className={cn(
-      "border border-gray-200 transition-all duration-300",
-      isBooked && "border-pickleball-purple/70",
-      isFull && !isBooked && "opacity-60"
-    )}>
-      <CardContent className="p-4 space-y-2">
-        <div className="flex items-start justify-between">
-          <h3 className="font-medium">{venue.name}</h3>
-          <div className={cn(
-            "px-2 py-1 text-xs rounded",
-            isFull ? "bg-gray-100 text-gray-600" : "bg-green-100 text-green-700"
-          )}>
-            {slot.currentPlayers}/{slot.maxPlayers} Players
-          </div>
-        </div>
-        
-        <div className="text-sm text-gray-500 space-y-1">
-          <div className="flex items-center">
-            <MapPin className="w-3.5 h-3.5 mr-1.5" />
-            <span>{venue.city}, {venue.state}</span>
-          </div>
-          <div className="flex items-center">
-            <CalendarDays className="w-3.5 h-3.5 mr-1.5" />
-            <span>{slot.date} ({slot.dayOfWeek})</span>
-          </div>
-          <div className="flex items-center">
-            <Clock className="w-3.5 h-3.5 mr-1.5" />
-            <span>{slot.startTime} - {slot.endTime}</span>
-          </div>
-        </div>
-        
-        <div className="pt-2">
-          {isBooked ? (
-            <div className="space-y-2">
-              <div className={cn(
-                "text-xs px-2 py-1 rounded-full w-fit",
-                "bg-pickleball-purple/20 text-pickleball-purple"
-              )}>
-                You're booked for this slot
-              </div>
-              
-              {isCheckedIn ? (
-                <div className="flex items-center text-sm text-green-600">
-                  <UserCheck className="h-4 w-4 mr-1" /> 
-                  Checked In
-                </div>
-              ) : canCheckIn ? (
-                <Button 
-                  size="sm" 
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  onClick={handleCheckIn}
-                  disabled={checkingIn}
-                >
-                  <UserCheck className="h-4 w-4 mr-2" /> 
-                  Check In
-                </Button>
-              ) : null}
-            </div>
-          ) : (
-            <Button
-              className="w-full bg-pickleball-purple hover:bg-pickleball-purple/90"
-              size="sm"
-              onClick={onBook}
-              disabled={isFull || disableBooking || !user}
-            >
-              {isFull ? "Fully Booked" : "Book Now"}
-            </Button>
+    <div className="border rounded-lg overflow-hidden bg-white">
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-medium text-gray-900">{venueName}</h3>
+          {isFull && (
+            <span className="text-xs font-medium bg-red-100 text-red-800 py-1 px-2 rounded">
+              Full
+            </span>
           )}
         </div>
-      </CardContent>
-    </Card>
+        
+        <div className="space-y-2">
+          <div className="flex items-center text-sm text-gray-600">
+            <Clock className="h-4 w-4 mr-2" />
+            <span>{startTime} - {endTime}</span>
+          </div>
+          
+          <div className="flex items-center text-sm text-gray-600">
+            <CalendarCheck className="h-4 w-4 mr-2" />
+            <span>{format(new Date(slot.date), 'MMM d, yyyy')}</span>
+          </div>
+          
+          <div className="flex items-center text-sm text-gray-600">
+            <Users className="h-4 w-4 mr-2" />
+            <span>{slot.currentPlayers} / {slot.maxPlayers} players</span>
+          </div>
+        </div>
+        
+        <div className="mt-4 pt-4 border-t">
+          <Button
+            onClick={() => onBookSlot(slot.id, slot.venueId)}
+            className="w-full bg-pickleball-purple hover:bg-pickleball-purple/90"
+            disabled={isBooking || isFull || !canBook}
+          >
+            {isBooking ? "Booking..." : "Book Slot"}
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 };
 
