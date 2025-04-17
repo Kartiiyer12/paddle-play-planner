@@ -12,6 +12,7 @@ import SlotForm from "./SlotForm";
 import { Slot, Venue } from "@/models/types";
 import { getSlots, deleteSlot } from "@/services/slotService";
 import { getVenues } from "@/services/venueService";
+import { isAutoCreateSlotsEnabled, setAutoCreateSlotsEnabled, createSlotsForNext7Days } from "@/services/autoSlotService";
 import PlayerCheckInDialog from "./PlayerCheckInDialog";
 import { format, isToday, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -36,12 +37,14 @@ const SlotManagementPanel = () => {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [venueData, slotData] = await Promise.all([
+      const [venueData, slotData, autoCreateEnabled] = await Promise.all([
         getVenues(),
-        getSlots()
+        getSlots(),
+        isAutoCreateSlotsEnabled()
       ]);
       setVenues(venueData);
       setSlots(slotData);
+      setAutoCreateSlots(autoCreateEnabled);
     } catch (error) {
       toast.error("Failed to load data");
     } finally {
@@ -87,13 +90,23 @@ const SlotManagementPanel = () => {
     loadData();
   };
 
-  const toggleAutoCreateSlots = (enabled: boolean) => {
-    setAutoCreateSlots(enabled);
-    toast.success(enabled 
-      ? "Automatic slot creation enabled. New slots will be created weekly."
-      : "Automatic slot creation disabled."
-    );
-    // In a real implementation, we would save this setting to the database
+  const toggleAutoCreateSlots = async (enabled: boolean) => {
+    try {
+      await setAutoCreateSlotsEnabled(enabled);
+      setAutoCreateSlots(enabled);
+      
+      if (enabled) {
+        // If enabling, run the slot creation process once to demonstrate
+        await createSlotsForNext7Days();
+        toast.success("Automatic slot creation enabled and slots for next week have been created");
+        // Reload slots to show the newly created ones
+        loadData();
+      } else {
+        toast.success("Automatic slot creation disabled");
+      }
+    } catch (error) {
+      toast.error("Failed to update automatic slot creation");
+    }
   };
 
   const todaySlots = slots.filter(slot => isToday(parseISO(slot.date)));
@@ -200,11 +213,11 @@ const SlotManagementPanel = () => {
               </Button>
               <Button 
                 variant="outline"
-                className="flex items-center gap-1 w-full"
+                className="border-blue-500 text-blue-500 w-full"
                 asChild
               >
                 <Link to="/admin/old-slots">
-                  <History className="h-4 w-4" />
+                  <History className="h-4 w-4 mr-1" />
                   View Old Slots
                 </Link>
               </Button>

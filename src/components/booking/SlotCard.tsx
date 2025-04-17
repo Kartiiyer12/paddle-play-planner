@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Slot } from "@/models/types";
 import { format } from "date-fns";
-import { CalendarCheck, Clock, Users, Check } from "lucide-react";
+import { CalendarCheck, Clock, Users, Check, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface SlotCardProps {
@@ -34,13 +34,13 @@ const SlotCard = ({
   const isFull = availableSpots <= 0;
   
   return (
-    <div className="border rounded-lg overflow-hidden bg-white">
+    <div className={`border rounded-lg overflow-hidden ${isFull ? 'bg-gray-50' : 'bg-white'}`}>
       <div className="p-4">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-medium text-gray-900">{venueName}</h3>
           {isFull && (
-            <Badge variant="destructive" className="text-xs">
-              Full
+            <Badge variant="destructive" className="text-xs flex items-center gap-1">
+              <X className="h-3 w-3" /> Full
             </Badge>
           )}
           {isBooked && (
@@ -63,17 +63,22 @@ const SlotCard = ({
           
           <div className="flex items-center text-sm text-gray-600">
             <Users className="h-4 w-4 mr-2" />
-            <span>{slot.currentPlayers} / {slot.maxPlayers} players</span>
+            <span className={isFull ? "font-medium text-red-600" : ""}>
+              {slot.currentPlayers} / {slot.maxPlayers} players
+              {isFull ? " (No spots left)" : availableSpots === 1 ? " (Last spot!)" : ""}
+            </span>
           </div>
         </div>
         
         <div className="mt-4 pt-4 border-t">
           <Button
             onClick={() => onBookSlot(slot.id, slot.venueId)}
-            className="w-full bg-pickleball-purple hover:bg-pickleball-purple/90"
+            className={`w-full ${isFull ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed" : "bg-pickleball-purple hover:bg-pickleball-purple/90"}`}
             disabled={isBooking || isFull || !canBook || isBooked}
           >
-            {isBooked ? "Already Booked" : isBooking ? "Booking..." : "Book Slot"}
+            {isBooked ? "Already Booked" : 
+              isFull ? "Fully Booked" : 
+              isBooking ? "Booking..." : "Book Slot"}
           </Button>
         </div>
       </div>
