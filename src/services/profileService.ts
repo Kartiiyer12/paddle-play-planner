@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface ProfileData {
@@ -11,22 +10,34 @@ export interface ProfileData {
 
 export const updateProfile = async (userId: string, profileData: ProfileData) => {
   try {
+    // Check if user is authenticated
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    console.log("Current authenticated user:", currentUser?.id);
+    console.log("Attempting to update profile for userId:", userId);
+
+    if (!currentUser) {
+      throw new Error("No authenticated user found");
+    }
+
+    if (currentUser.id !== userId) {
+      throw new Error("You can only update your own profile");
+    }
+
     // Add better logging to diagnose issues
     console.log("Updating profile for user:", userId, "with data:", profileData);
     
-    // First check if the profile exists
-    const { data: existingProfile, error: checkError } = await supabase
+    // First check if the profile exists, but don't use single() as it throws error when no rows found
+    const { data: existingProfiles, error: checkError } = await supabase
       .from("profiles")
       .select("id")
-      .eq("id", userId)
-      .single();
+      .eq("id", userId);
     
-    if (checkError && checkError.code !== 'PGRST116') {
-      // Error other than "no rows returned"
+    if (checkError) {
       console.error("Error checking profile existence:", checkError);
       throw checkError;
     }
 
+    const existingProfile = existingProfiles && existingProfiles.length > 0 ? existingProfiles[0] : null;
     let result;
     
     if (!existingProfile) {
@@ -38,7 +49,8 @@ export const updateProfile = async (userId: string, profileData: ProfileData) =>
           id: userId,
           ...profileData,
           updated_at: new Date().toISOString()
-        });
+        })
+        .select();
     } else {
       // Profile exists, update it
       console.log("Profile exists, updating profile");
@@ -48,7 +60,8 @@ export const updateProfile = async (userId: string, profileData: ProfileData) =>
           ...profileData,
           updated_at: new Date().toISOString()
         })
-        .eq("id", userId);
+        .eq("id", userId)
+        .select();
     }
     
     if (result.error) {
@@ -56,7 +69,7 @@ export const updateProfile = async (userId: string, profileData: ProfileData) =>
       throw result.error;
     }
     
-    console.log("Profile updated successfully");
+    console.log("Profile updated successfully", result.data);
     return true;
   } catch (error: any) {
     console.error("Error updating profile:", error.message);

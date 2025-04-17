@@ -102,18 +102,36 @@ export const getSlotsByDateRange = async (startDate: string, endDate: string, ve
     throw error;
   }
 
-  return data.map(slot => ({
-    id: slot.id,
-    venueId: slot.venue_id,
-    date: slot.date,
-    dayOfWeek: slot.day_of_week,
-    startTime: slot.start_time,
-    endTime: slot.end_time,
-    maxPlayers: slot.max_players,
-    currentPlayers: slot.current_players,
-    createdAt: slot.created_at,
-    updatedAt: slot.updated_at
-  })) as Slot[];
+  // Filter out past slots
+  const now = new Date();
+  const currentDate = now.toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
+  const currentTime = now.toTimeString().split(' ')[0]; // Get current time in HH:MM:SS format
+
+  return data
+    .filter(slot => {
+      // If the slot date is in the future, include it
+      if (slot.date > currentDate) return true;
+      
+      // If the slot is today, check the time
+      if (slot.date === currentDate) {
+        return slot.end_time > currentTime; // Only include if end time hasn't passed
+      }
+      
+      // Exclude past dates
+      return false;
+    })
+    .map(slot => ({
+      id: slot.id,
+      venueId: slot.venue_id,
+      date: slot.date,
+      dayOfWeek: slot.day_of_week,
+      startTime: slot.start_time,
+      endTime: slot.end_time,
+      maxPlayers: slot.max_players,
+      currentPlayers: slot.current_players,
+      createdAt: slot.created_at,
+      updatedAt: slot.updated_at
+    })) as Slot[];
 };
 
 export const getSlotById = async (slotId: string) => {
