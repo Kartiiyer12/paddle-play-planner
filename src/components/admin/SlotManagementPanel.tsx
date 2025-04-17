@@ -1,12 +1,12 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Edit, Trash, Calendar, CalendarClock, Users } from "lucide-react";
+import { Plus, Edit, Trash, Calendar, CalendarClock, Users, History } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 import SlotForm from "./SlotForm";
 import { Slot, Venue } from "@/models/types";
 import { getSlots, deleteSlot } from "@/services/slotService";
@@ -93,21 +93,17 @@ const SlotManagementPanel = () => {
     // In a real implementation, we would save this setting to the database
   };
 
-  // Separate slots into today and future
   const todaySlots = slots.filter(slot => isToday(parseISO(slot.date)));
   const futureSlots = slots.filter(slot => !isToday(parseISO(slot.date)) && parseISO(slot.date) > new Date());
 
-  // Sort slots by date and time
   const sortedFutureSlots = [...futureSlots].sort((a, b) => {
     const dateCompare = new Date(a.date).getTime() - new Date(b.date).getTime();
     if (dateCompare !== 0) return dateCompare;
     return a.startTime.localeCompare(b.startTime);
   });
 
-  // Sort today's slots by time
   const sortedTodaySlots = [...todaySlots].sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-  // Create a reusable slot table component
   const renderSlotTable = (slotsList: Slot[], title: string) => {
     if (slotsList.length === 0) return null;
     
@@ -189,15 +185,26 @@ const SlotManagementPanel = () => {
         <CardContent className="p-6">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h2 className="text-xl font-semibold">Slot Management</h2>
+              <h2 className="text-xl font-semibold">Manage Slots</h2>
               <p className="text-gray-500 text-sm mt-1">Create and manage time slots for venues</p>
             </div>
-            <Button 
-              onClick={() => handleOpenSlotDialog()}
-              className="bg-pickleball-purple hover:bg-pickleball-purple/90"
-            >
-              <Plus className="h-4 w-4 mr-2" /> Add Slot
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                as={Link}
+                to="/admin/old-slots"
+                variant="outline"
+                className="flex items-center gap-1"
+              >
+                <History className="h-4 w-4" />
+                View Old Slots
+              </Button>
+              <Button 
+                onClick={() => handleOpenSlotDialog()}
+                className="bg-pickleball-purple hover:bg-pickleball-purple/90"
+              >
+                <Plus className="h-4 w-4 mr-2" /> Add Slot
+              </Button>
+            </div>
           </div>
           
           <div className="mt-6 flex items-center justify-between border-t border-gray-200 pt-4">
@@ -216,13 +223,10 @@ const SlotManagementPanel = () => {
         </CardContent>
       </Card>
 
-      {/* Today's Slots Section */}
       {renderSlotTable(sortedTodaySlots, "Today's Slots")}
       
-      {/* Future Slots Section */}
       {renderSlotTable(sortedFutureSlots, "Upcoming Slots")}
       
-      {/* No slots message */}
       {!isLoading && slots.length === 0 && (
         <Card>
           <CardContent className="p-6 text-center">

@@ -134,6 +134,38 @@ export const getSlotsByDateRange = async (startDate: string, endDate: string, ve
     })) as Slot[];
 };
 
+export const getPastSlots = async (date: string, venueId?: string | null) => {
+  let query = supabase
+    .from("slots")
+    .select("*")
+    .lte("date", date)  // Less than or equal to the selected date
+    .order("date", { ascending: false })  // Most recent first
+    .order("start_time", { ascending: true });
+
+  if (venueId) {
+    query = query.eq("venue_id", venueId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  return data.map(slot => ({
+    id: slot.id,
+    venueId: slot.venue_id,
+    date: slot.date,
+    dayOfWeek: slot.day_of_week,
+    startTime: slot.start_time,
+    endTime: slot.end_time,
+    maxPlayers: slot.max_players,
+    currentPlayers: slot.current_players,
+    createdAt: slot.created_at,
+    updatedAt: slot.updated_at
+  })) as Slot[];
+};
+
 export const getSlotById = async (slotId: string) => {
   const { data, error } = await supabase
     .from("slots")
