@@ -33,13 +33,23 @@ const ProfileVenueSelector = ({
     );
   });
 
+  // First display selected venues, then unselected ones
+  const sortedVenues = [...filteredVenues].sort((a, b) => {
+    const aSelected = selectedVenues.includes(a.id);
+    const bSelected = selectedVenues.includes(b.id);
+    
+    if (aSelected && !bSelected) return -1;
+    if (!aSelected && bSelected) return 1;
+    return 0;
+  });
+
   return (
     <div className="space-y-4">
       <Label>Preferred Venues</Label>
       <div className="relative">
         <Input
           type="text"
-          placeholder="Search venues by name, city, or state..."
+          placeholder="Search venues by name, city, state or address..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pr-10"
@@ -48,7 +58,7 @@ const ProfileVenueSelector = ({
         <Search className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredVenues.map((venue) => (
+        {sortedVenues.map((venue) => (
           <div
             key={venue.id}
             className={`border rounded-md p-4 cursor-pointer ${
@@ -60,6 +70,9 @@ const ProfileVenueSelector = ({
           >
             <h3 className="font-medium">{venue.name}</h3>
             <p className="text-sm text-gray-500">{venue.city}, {venue.state}</p>
+            {venue.address && (
+              <p className="text-xs text-gray-400 mt-1">{venue.address}</p>
+            )}
           </div>
         ))}
       </div>

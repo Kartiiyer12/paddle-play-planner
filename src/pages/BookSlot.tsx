@@ -143,6 +143,7 @@ const BookSlot = () => {
                     selectedVenue={selectedVenue}
                     onVenueChange={handleVenueChange}
                     isLoading={isLoading}
+                    preferredVenues={user?.preferredVenues || []}
                   />
                 </div>
               </div>
