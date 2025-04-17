@@ -10,7 +10,7 @@ interface AvailableSlotsProps {
   selectedVenue: string | null;
   onBookSlot: (slotId: string, venueId: string) => void;
   isBooking: boolean;
-  slotCoins: number;
+  userBookedSlotIds: string[];
 }
 
 const AvailableSlots = ({ 
@@ -19,7 +19,7 @@ const AvailableSlots = ({
   selectedVenue,
   onBookSlot,
   isBooking,
-  slotCoins
+  userBookedSlotIds
 }: AvailableSlotsProps) => {
   // Group slots by date
   const slotsByDate = groupBy(availableSlots, 'date');
@@ -78,6 +78,7 @@ const AvailableSlots = ({
                   onBookSlot={onBookSlot}
                   isBooking={isBooking}
                   canBook={true}
+                  isBooked={userBookedSlotIds.includes(slot.id)}
                 />
               ))}
             </div>

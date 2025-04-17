@@ -34,6 +34,7 @@ const App = () => {
               <Route path="/my-bookings" element={<MyBookings />} />
               <Route path="/book-slot" element={<BookSlot />} />
               <Route path="/dashboard" element={<Navigate to="/my-bookings" replace />} />
+              <Route path="/new-user" element={<Navigate to="/profile" replace />} />
               
               {/* Admin routes */}
               <Route path="/admin" element={<Navigate to="/admin/slots" replace />} />

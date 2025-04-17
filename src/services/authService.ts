@@ -1,6 +1,7 @@
 
 import { User } from '@/models/types';
 import { supabase } from '@/integrations/supabase/client';
+import { getProfile } from './profileService';
 
 // Get the current authenticated user from Supabase auth
 export const getCurrentUser = async (): Promise<User | null> => {
@@ -15,6 +16,17 @@ export const getCurrentUser = async (): Promise<User | null> => {
     // Extract metadata from user object
     const metadata = user.user_metadata;
     
+    // Try to fetch profile data to get preferred venues
+    let preferredVenues: string[] = [];
+    try {
+      const profileData = await getProfile(user.id);
+      if (profileData && profileData.preferred_venues) {
+        preferredVenues = profileData.preferred_venues;
+      }
+    } catch (error) {
+      console.error("Error fetching profile in getCurrentUser:", error);
+    }
+    
     // Map Supabase user to our User model
     return {
       id: user.id,
@@ -23,7 +35,7 @@ export const getCurrentUser = async (): Promise<User | null> => {
       isVerified: user.email_confirmed_at !== null,
       role: metadata?.role || 'user',
       createdAt: user.created_at || new Date().toISOString(),
-      preferredVenues: [] // This will be populated from profiles table in AuthContext
+      preferredVenues
     };
   } catch (error) {
     console.error('Error getting current user:', error);
@@ -49,6 +61,28 @@ export const loginUser = async (email: string, password: string): Promise<User |
   // Extract metadata from user object
   const metadata = data.user.user_metadata;
   
+  // Check if user has completed their profile
+  let preferredVenues: string[] = [];
+  let isNewUser = false;
+  
+  try {
+    const profileData = await getProfile(data.user.id);
+    if (profileData && profileData.preferred_venues) {
+      preferredVenues = profileData.preferred_venues;
+    }
+    
+    // Check if this might be a first-time login (no profile data)
+    isNewUser = !profileData || (!profileData.name && !profileData.skill_level);
+  } catch (error) {
+    console.error("Error fetching profile in loginUser:", error);
+    isNewUser = true;
+  }
+  
+  // Store whether this is likely a new user in session storage
+  if (isNewUser) {
+    sessionStorage.setItem('newUser', 'true');
+  }
+  
   // Map Supabase user to our User model
   return {
     id: data.user.id,
@@ -57,7 +91,7 @@ export const loginUser = async (email: string, password: string): Promise<User |
     isVerified: data.user.email_confirmed_at !== null,
     role: metadata?.role || 'user',
     createdAt: data.user.created_at || new Date().toISOString(),
-    preferredVenues: [] // This will be populated from profiles table in AuthContext
+    preferredVenues
   };
 };
 
@@ -77,6 +111,9 @@ export const registerUser = async (email: string, password: string, name?: strin
     throw error;
   }
   
+  // Set a flag that this is a new user
+  sessionStorage.setItem('newUser', 'true');
+  
   return data;
 };
 
@@ -87,6 +124,9 @@ export const logoutUser = async () => {
   if (error) {
     throw error;
   }
+  
+  // Clear any session flags
+  sessionStorage.removeItem('newUser');
   
   return true;
 };

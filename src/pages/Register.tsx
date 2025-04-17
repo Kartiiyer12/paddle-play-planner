@@ -28,33 +28,25 @@ const Register = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    // Validate form
+    
     if (formData.password !== formData.confirmPassword) {
       toast.error("Passwords do not match");
-      setIsLoading(false);
       return;
     }
-
-    if (!agreeTerms) {
-      toast.error("You must agree to the terms and conditions");
-      setIsLoading(false);
-      return;
-    }
-
+    
+    setIsLoading(true);
+    
     try {
-      // Register the user
       await registerUser(formData.email, formData.password, formData.name);
-
-      // Success, show a message and redirect
-      toast.success("Registration successful! Please check your email to verify your account.");
+      
+      // Success - redirect to login page with a message
+      toast.success("Registration successful! Please log in to complete your profile setup.");
       navigate("/login");
     } catch (error: any) {
       console.error("Registration error:", error);
-      toast.error(error.message || "An error occurred during registration");
+      toast.error(error.message || "Failed to register. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -73,7 +65,7 @@ const Register = () => {
                 Join the PicklePlay community today
               </CardDescription>
             </CardHeader>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleRegister}>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>

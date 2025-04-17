@@ -78,10 +78,7 @@ const BookSlot = () => {
       
       const slotsData = await getSlotsByDateRange(startDate, endDate, venueId || selectedVenue);
       
-      // Filter out slots that user has already booked
-      const filteredSlots = slotsData.filter(slot => !userBookedSlotIds.includes(slot.id));
-      
-      setAvailableSlots(filteredSlots);
+      setAvailableSlots(slotsData);
     } catch (error) {
       console.error("Error loading slots:", error);
       toast.error("Failed to load available slots");
@@ -157,7 +154,7 @@ const BookSlot = () => {
               selectedVenue={selectedVenue}
               onBookSlot={handleBookSlot}
               isBooking={isBooking}
-              slotCoins={999} // Set a large value to prevent issues with bookings
+              userBookedSlotIds={userBookedSlotIds}
             />
           </div>
         </div>

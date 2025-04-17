@@ -24,10 +24,12 @@ const ProfileVenueSelector = ({
     if (!searchTerm) return true;
     
     const search = searchTerm.toLowerCase();
+    // Enhanced search to include venue name, city, state, and address
     return (
       venue.name.toLowerCase().includes(search) ||
       venue.city.toLowerCase().includes(search) ||
-      venue.state.toLowerCase().includes(search)
+      venue.state.toLowerCase().includes(search) ||
+      (venue.address && venue.address.toLowerCase().includes(search))
     );
   });
 
@@ -37,7 +39,7 @@ const ProfileVenueSelector = ({
       <div className="relative">
         <Input
           type="text"
-          placeholder="Search venues by city or county..."
+          placeholder="Search venues by name, city, or state..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pr-10"

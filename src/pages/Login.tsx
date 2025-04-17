@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -19,10 +18,8 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   
-  // Redirect if already logged in
   useEffect(() => {
     if (user && !authLoading) {
-      // Redirect admin users to admin panel, regular users to my bookings
       if (user.role === 'admin') {
         navigate("/admin");
       } else {
@@ -31,37 +28,38 @@ const Login = () => {
     }
   }, [user, navigate, authLoading]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError("");
     
     try {
-      const loggedInUser = await loginUser(email, password);
+      const user = await loginUser(email, password);
       
-      if (loggedInUser) {
-        setUser(loggedInUser);
-        toast.success("Login successful!");
-        
-        // Redirect based on user role
-        if (loggedInUser.role === 'admin') {
-          navigate("/admin");
-        } else {
-          navigate("/my-bookings");
-        }
+      if (!user) {
+        toast.error("Failed to login. Please try again.");
+        return;
+      }
+      
+      setUser(user);
+      
+      const isNewUser = sessionStorage.getItem('newUser') === 'true';
+      
+      if (isNewUser) {
+        sessionStorage.removeItem('newUser');
+        toast.success("Login successful! Please complete your profile.");
+        navigate("/profile");
       } else {
-        throw new Error("Login failed. Please try again.");
+        toast.success("Login successful!");
+        navigate("/my-bookings");
       }
     } catch (error: any) {
       console.error("Login error:", error);
-      toast.error("Login failed: " + (error.message || "Unknown error"));
-      setError(error.message || "Failed to login");
+      toast.error(error.message || "Failed to login. Please check your credentials.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Don't render if already authenticated and being redirected
   if (user && !authLoading) {
     return null;
   }
@@ -79,7 +77,7 @@ const Login = () => {
                 Enter your credentials to access your account
               </CardDescription>
             </CardHeader>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleLogin}>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>

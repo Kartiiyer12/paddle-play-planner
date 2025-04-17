@@ -2,7 +2,8 @@
 import { Button } from "@/components/ui/button";
 import { Slot } from "@/models/types";
 import { format } from "date-fns";
-import { CalendarCheck, Clock, Users } from "lucide-react";
+import { CalendarCheck, Clock, Users, Check } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface SlotCardProps {
   slot: Slot;
@@ -10,6 +11,7 @@ interface SlotCardProps {
   onBookSlot: (slotId: string, venueId: string) => void;
   isBooking: boolean;
   canBook: boolean;
+  isBooked: boolean;
 }
 
 const SlotCard = ({ 
@@ -17,7 +19,8 @@ const SlotCard = ({
   venueName, 
   onBookSlot, 
   isBooking,
-  canBook 
+  canBook,
+  isBooked
 }: SlotCardProps) => {
   
   // Format times for display
@@ -36,9 +39,14 @@ const SlotCard = ({
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-medium text-gray-900">{venueName}</h3>
           {isFull && (
-            <span className="text-xs font-medium bg-red-100 text-red-800 py-1 px-2 rounded">
+            <Badge variant="destructive" className="text-xs">
               Full
-            </span>
+            </Badge>
+          )}
+          {isBooked && (
+            <Badge variant="secondary" className="text-xs flex items-center gap-1">
+              <Check className="h-3 w-3" /> Booked
+            </Badge>
           )}
         </div>
         
@@ -63,9 +71,9 @@ const SlotCard = ({
           <Button
             onClick={() => onBookSlot(slot.id, slot.venueId)}
             className="w-full bg-pickleball-purple hover:bg-pickleball-purple/90"
-            disabled={isBooking || isFull || !canBook}
+            disabled={isBooking || isFull || !canBook || isBooked}
           >
-            {isBooking ? "Booking..." : "Book Slot"}
+            {isBooked ? "Already Booked" : isBooking ? "Booking..." : "Book Slot"}
           </Button>
         </div>
       </div>
