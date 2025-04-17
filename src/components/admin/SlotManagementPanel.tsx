@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +15,7 @@ import { getVenues } from "@/services/venueService";
 import PlayerCheckInDialog from "./PlayerCheckInDialog";
 import { format, isToday, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const SlotManagementPanel = () => {
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -25,6 +27,7 @@ const SlotManagementPanel = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [autoCreateSlots, setAutoCreateSlots] = useState(false);
   const [isPlayerCheckInDialogOpen, setIsPlayerCheckInDialogOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     loadData();
@@ -138,7 +141,7 @@ const SlotManagementPanel = () => {
                       <TableCell>{`${slot.startTime} - ${slot.endTime}`}</TableCell>
                       <TableCell>{`${slot.currentPlayers}/${slot.maxPlayers}`}</TableCell>
                       <TableCell>
-                        <div className="flex space-x-2">
+                        <div className={`flex ${isMobile ? "flex-col space-y-2" : "space-x-2"}`}>
                           <Button
                             size="sm"
                             variant="outline"
@@ -183,26 +186,27 @@ const SlotManagementPanel = () => {
     <>
       <Card className="mb-6">
         <CardContent className="p-6">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center mb-4 flex-wrap">
             <div>
               <h2 className="text-xl font-semibold">Manage Slots</h2>
               <p className="text-gray-500 text-sm mt-1">Create and manage time slots for venues</p>
             </div>
-            <div className="flex gap-2">
-              <Button 
-                as={Link}
-                to="/admin/old-slots"
-                variant="outline"
-                className="flex items-center gap-1"
-              >
-                <History className="h-4 w-4" />
-                View Old Slots
-              </Button>
+            <div className={`flex ${isMobile ? "flex-col w-full mt-4 space-y-2" : "gap-2"}`}>
               <Button 
                 onClick={() => handleOpenSlotDialog()}
-                className="bg-pickleball-purple hover:bg-pickleball-purple/90"
+                className="bg-pickleball-purple hover:bg-pickleball-purple/90 w-full"
               >
                 <Plus className="h-4 w-4 mr-2" /> Add Slot
+              </Button>
+              <Button 
+                variant="outline"
+                className="flex items-center gap-1 w-full"
+                asChild
+              >
+                <Link to="/admin/old-slots">
+                  <History className="h-4 w-4" />
+                  View Old Slots
+                </Link>
               </Button>
             </div>
           </div>

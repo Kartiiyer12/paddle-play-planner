@@ -15,13 +15,15 @@ import { getVenues } from "@/services/venueService";
 import { Venue, Slot } from "@/models/types";
 import { getPastSlots } from "@/services/slotService";
 import { toast } from "sonner";
-import { format, parseISO, isBefore } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import PlayerCheckInDialog from "@/components/admin/PlayerCheckInDialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const OldSlotsPanel = () => {
   const navigate = useNavigate();
   const { user, isAdmin, isLoading: isLoadingAuth } = useAuth();
+  const isMobile = useIsMobile();
 
   const [venues, setVenues] = useState<Venue[]>([]);
   const [pastSlots, setPastSlots] = useState<Slot[]>([]);
@@ -67,7 +69,6 @@ const OldSlotsPanel = () => {
 
     setIsLoading(true);
     try {
-      // Here we're adding a utility function to fetch past slots
       const slots = await getPastSlots(selectedDate, selectedVenue);
       setPastSlots(slots);
     } catch (error) {
@@ -102,11 +103,11 @@ const OldSlotsPanel = () => {
 
       <div className="flex-grow pt-24 pb-24 px-4 bg-gray-50">
         <div className="container mx-auto">
-          <div className="flex items-center mb-6">
+          <div className="flex items-center mb-6 flex-wrap">
             <Button
               variant="ghost"
               onClick={() => navigate("/admin/slots")}
-              className="mr-4"
+              className="mr-4 mb-2"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
               Back to Slots
@@ -117,7 +118,7 @@ const OldSlotsPanel = () => {
           <Card className="mb-6">
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-4">Filter Past Slots</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className={`grid grid-cols-1 ${isMobile ? "" : "md:grid-cols-3"} gap-4`}>
                 <div>
                   <Label htmlFor="venue">Venue</Label>
                   <Select
@@ -177,7 +178,7 @@ const OldSlotsPanel = () => {
                       <TableRow>
                         <TableHead>Venue</TableHead>
                         <TableHead>Date</TableHead>
-                        <TableHead>Day</TableHead>
+                        {!isMobile && <TableHead>Day</TableHead>}
                         <TableHead>Time</TableHead>
                         <TableHead>Attendance</TableHead>
                         <TableHead>Actions</TableHead>
@@ -190,14 +191,14 @@ const OldSlotsPanel = () => {
                           <TableRow key={slot.id}>
                             <TableCell>{venue?.name || "Unknown Venue"}</TableCell>
                             <TableCell>{slot.date}</TableCell>
-                            <TableCell>{slot.dayOfWeek}</TableCell>
+                            {!isMobile && <TableCell>{slot.dayOfWeek}</TableCell>}
                             <TableCell>{`${slot.startTime} - ${slot.endTime}`}</TableCell>
                             <TableCell>{`${slot.currentPlayers}/${slot.maxPlayers}`}</TableCell>
                             <TableCell>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="border-blue-500 text-blue-500"
+                                className="border-blue-500 text-blue-500 w-full"
                                 onClick={() => handleViewPlayers(slot)}
                               >
                                 <Users className="h-4 w-4 mr-1" />
