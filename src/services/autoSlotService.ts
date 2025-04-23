@@ -1,4 +1,8 @@
+
 import { supabase } from "@/integrations/supabase/client";
+import { createSlot } from "./slotService";
+import { getVenues } from "./venueService";
+import { format, addDays, parseISO, getDay } from "date-fns";
 
 /**
  * Checks if auto-creation of slots is enabled in the database.
@@ -15,7 +19,7 @@ export const getAutoCreateSlotsEnabled = async (): Promise<boolean> => {
       // Call the get_setting RPC function with the correct parameter
       const { data, error } = await supabase.rpc('get_setting', { 
         setting_key: 'auto_create_slots' 
-      });
+      } as { setting_key: string });
       
       if (!error && data) {
         settingsTableExists = true;
@@ -43,7 +47,7 @@ export const setAutoCreateSlotsEnabled = async (enabled: boolean): Promise<void>
     const { error } = await supabase.rpc('set_setting', { 
       setting_key: 'auto_create_slots', 
       setting_value: enabled ? 'true' : 'false'
-    });
+    } as { setting_key: string, setting_value: string });
     
     if (error) {
       console.error("Error updating auto-create slots setting:", error);
@@ -53,6 +57,48 @@ export const setAutoCreateSlotsEnabled = async (enabled: boolean): Promise<void>
     console.log(`Auto-create slots setting updated to: ${enabled}`);
   } catch (error) {
     console.error("Error updating auto-create slots setting:", error);
+    throw error;
+  }
+};
+
+/**
+ * Alias for getAutoCreateSlotsEnabled to match naming in SlotManagementPanel.tsx
+ */
+export const isAutoCreateSlotsEnabled = getAutoCreateSlotsEnabled;
+
+/**
+ * Creates slots for the next 7 days based on venue settings
+ */
+export const createSlotsForNext7Days = async (): Promise<void> => {
+  try {
+    const venues = await getVenues();
+    const today = new Date();
+    
+    // Process each venue
+    for (const venue of venues) {
+      // For demo purposes, create one slot per day for the next 7 days
+      for (let i = 1; i <= 7; i++) {
+        const date = addDays(today, i);
+        const formattedDate = format(date, 'yyyy-MM-dd');
+        const dayOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][getDay(date)];
+        
+        // Create a slot for this venue on this day (mid-day time slot for demo)
+        await createSlot({
+          venueId: venue.id,
+          date: formattedDate,
+          startTime: '10:00:00',
+          endTime: '12:00:00',
+          maxPlayers: 4,
+          updatedAt: new Date().toISOString()
+        });
+        
+        console.log(`Created auto slot for venue ${venue.name} on ${formattedDate}`);
+      }
+    }
+    
+    console.log("Successfully created slots for the next 7 days");
+  } catch (error) {
+    console.error("Error creating slots for next 7 days:", error);
     throw error;
   }
 };
