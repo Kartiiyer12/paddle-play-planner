@@ -27,10 +27,11 @@ export const useBookingUsers = () => {
         throw new Error("Only admins can access user data");
       }
 
-      // Get all bookings
+      // Get bookings associated with venues owned by this admin
+      // The RLS policy will automatically filter to only show bookings for venues owned by this admin
       const { data: bookings, error: bookingsError } = await supabase
         .from('bookings')
-        .select('user_id, user_name, created_at, checked_in');
+        .select('*');
         
       if (bookingsError) throw bookingsError;
       

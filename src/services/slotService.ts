@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Slot } from "@/models/types";
+import { isAfter, parseISO, startOfDay } from "date-fns";
 
 export const getSlots = async () => {
   const { data, error } = await supabase
@@ -192,6 +193,12 @@ export const getSlotById = async (slotId: string) => {
 };
 
 export const createSlot = async (slot: Omit<Slot, "id" | "createdAt" | "currentPlayers" | "dayOfWeek">) => {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  
+  if (userError || !userData.user) {
+    throw new Error("User not authenticated");
+  }
+
   const { data, error } = await supabase
     .from("slots")
     .insert([{
@@ -204,6 +211,7 @@ export const createSlot = async (slot: Omit<Slot, "id" | "createdAt" | "currentP
     .select();
   
   if (error) {
+    console.error("Slot creation error:", error);
     throw error;
   }
   
