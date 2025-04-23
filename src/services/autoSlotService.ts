@@ -26,7 +26,7 @@ export const getAutoCreateSlotsEnabled = async (): Promise<boolean> => {
     
     // Try to query the settings
     try {
-      const { data, error } = await supabase.rpc<boolean>('get_setting', { 
+      const { data, error } = await supabase.rpc('get_setting', { 
         setting_key: 'auto_create_slots' 
       } satisfies GetSettingParams);
       

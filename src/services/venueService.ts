@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Venue } from "@/models/types";
 
@@ -6,6 +5,7 @@ export const getVenues = async () => {
   const { data, error } = await supabase
     .from("venues")
     .select("*")
+    .eq("admin_id", supabase.auth.getUser().then(res => res.data.user?.id))
     .order("name");
   
   if (error) {
@@ -54,6 +54,8 @@ export const getVenueById = async (id: string) => {
 };
 
 export const createVenue = async (venue: Omit<Venue, "id" | "createdAt">) => {
+  const { data: userData } = await supabase.auth.getUser();
+  
   const { data, error } = await supabase
     .from("venues")
     .insert([{
@@ -64,11 +66,13 @@ export const createVenue = async (venue: Omit<Venue, "id" | "createdAt">) => {
       zip: venue.zip,
       description: venue.description,
       court_count: venue.courtCount,
-      image_url: venue.imageUrl
+      image_url: venue.imageUrl,
+      admin_id: userData.user?.id
     }])
     .select();
   
   if (error) {
+    console.error("Error creating venue:", error);
     throw error;
   }
   
@@ -135,4 +139,32 @@ export const deleteVenue = async (id: string) => {
   }
   
   return true;
+};
+
+/**
+ * Gets all venues available for bookings (all venues, not just owned by current admin)
+ */
+export const getAllVenuesForBooking = async () => {
+  const { data, error } = await supabase
+    .from("venues")
+    .select("*")
+    .order("name");
+  
+  if (error) {
+    throw error;
+  }
+  
+  return data.map(venue => ({
+    id: venue.id,
+    name: venue.name,
+    address: venue.address,
+    city: venue.city,
+    state: venue.state,
+    zip: venue.zip || '',
+    description: venue.description || '',
+    courtCount: venue.court_count,
+    imageUrl: venue.image_url || '',
+    createdAt: venue.created_at,
+    updatedAt: venue.updated_at
+  })) as Venue[];
 };
