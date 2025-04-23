@@ -206,12 +206,12 @@ export const createSlot = async (slot: Omit<Slot, "id" | "createdAt" | "currentP
       date: slot.date,
       start_time: slot.startTime,
       end_time: slot.endTime,
-      max_players: slot.maxPlayers,
-      admin_id: userData.user.id
+      max_players: slot.maxPlayers
     }])
     .select();
   
   if (error) {
+    console.error("Slot creation error:", error);
     throw error;
   }
   

@@ -85,11 +85,21 @@ export const createSlotsForNext7Days = async (): Promise<void> => {
  */
 export const isAutoCreateSlotsEnabled = async (): Promise<boolean> => {
   try {
+    // Check if the settings table exists first
+    const { count, error: tableCheckError } = await supabase
+      .from('settings')
+      .select('*', { count: 'exact', head: true });
+      
+    if (tableCheckError || count === null || count === 0) {
+      // Table might not exist or is empty
+      return false;
+    }
+    
     const { data, error } = await supabase
-      .from("settings")
-      .select("value")
-      .eq("key", "auto_create_slots")
-      .single();
+      .from('settings')
+      .select('value')
+      .eq('key', 'auto_create_slots')
+      .maybeSingle();
     
     if (error) {
       console.error("Error checking auto-create slots setting:", error);
@@ -108,11 +118,22 @@ export const isAutoCreateSlotsEnabled = async (): Promise<boolean> => {
  */
 export const setAutoCreateSlotsEnabled = async (enabled: boolean): Promise<void> => {
   try {
+    // Check if the settings table exists
+    const { count, error: tableCheckError } = await supabase
+      .from('settings')
+      .select('*', { count: 'exact', head: true });
+      
+    if (tableCheckError) {
+      console.error("Error checking settings table:", tableCheckError);
+      throw tableCheckError;
+    }
+      
+    // If settings table exists
     const { error } = await supabase
-      .from("settings")
+      .from('settings')
       .upsert({ 
-        key: "auto_create_slots", 
-        value: enabled ? 'true' : 'false'
+        key: 'auto_create_slots', 
+        value: enabled ? 'true' : 'false' 
       });
     
     if (error) {

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Venue } from "@/models/types";
 
@@ -75,6 +76,7 @@ export const createVenue = async (venue: Omit<Venue, "id" | "createdAt">) => {
     .select();
   
   if (error) {
+    console.error("Venue creation error:", error);
     throw error;
   }
   
