@@ -4,6 +4,16 @@ import { createSlot } from "./slotService";
 import { getVenues } from "./venueService";
 import { format, addDays, parseISO, getDay } from "date-fns";
 
+// Define interface for RPC parameters
+interface GetSettingParams {
+  setting_key: string;
+}
+
+interface SetSettingParams {
+  setting_key: string;
+  setting_value: string;
+}
+
 /**
  * Checks if auto-creation of slots is enabled in the database.
  * @returns A promise that resolves to a boolean indicating whether auto-creation of slots is enabled.
@@ -16,10 +26,9 @@ export const getAutoCreateSlotsEnabled = async (): Promise<boolean> => {
     
     // Try to query the settings
     try {
-      // Call the get_setting RPC function with the correct parameter
-      const { data, error } = await supabase.rpc('get_setting', { 
+      const { data, error } = await supabase.rpc<boolean>('get_setting', { 
         setting_key: 'auto_create_slots' 
-      } as { setting_key: string });
+      } satisfies GetSettingParams);
       
       if (!error && data) {
         settingsTableExists = true;
@@ -43,11 +52,10 @@ export const getAutoCreateSlotsEnabled = async (): Promise<boolean> => {
  */
 export const setAutoCreateSlotsEnabled = async (enabled: boolean): Promise<void> => {
   try {
-    // Call the set_setting RPC function with correct parameters
     const { error } = await supabase.rpc('set_setting', { 
       setting_key: 'auto_create_slots', 
       setting_value: enabled ? 'true' : 'false'
-    } as { setting_key: string, setting_value: string });
+    } satisfies SetSettingParams);
     
     if (error) {
       console.error("Error updating auto-create slots setting:", error);
@@ -71,6 +79,7 @@ export const isAutoCreateSlotsEnabled = getAutoCreateSlotsEnabled;
  */
 export const createSlotsForNext7Days = async (): Promise<void> => {
   try {
+    // Get only venues where the current user is the admin
     const venues = await getVenues();
     const today = new Date();
     
