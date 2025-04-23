@@ -72,11 +72,10 @@ export const updateProfile = async (userId: string, profileData: ProfileData) =>
     
     console.log("Profile updated successfully", result.data);
     
-    // Update the user metadata with the name for consistency
-    // But we'll do this using the auth.updateUser method which is allowed
+    // Update the user metadata separately using auth.updateUser
     if (profileData.name) {
       try {
-        const { error: updateUserError } = await supabase.auth.updateUser({
+        const { data, error: updateUserError } = await supabase.auth.updateUser({
           data: { full_name: profileData.name }
         });
         
