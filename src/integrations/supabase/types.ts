@@ -143,6 +143,7 @@ export type Database = {
       venues: {
         Row: {
           address: string
+          admin_id: string | null
           city: string
           court_count: number
           created_at: string
@@ -156,6 +157,7 @@ export type Database = {
         }
         Insert: {
           address: string
+          admin_id?: string | null
           city: string
           court_count?: number
           created_at?: string
@@ -169,6 +171,7 @@ export type Database = {
         }
         Update: {
           address?: string
+          admin_id?: string | null
           city?: string
           court_count?: number
           created_at?: string

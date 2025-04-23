@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Venue } from "@/models/types";
 
@@ -54,6 +53,12 @@ export const getVenueById = async (id: string) => {
 };
 
 export const createVenue = async (venue: Omit<Venue, "id" | "createdAt">) => {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  
+  if (userError || !userData.user) {
+    throw new Error("User not authenticated");
+  }
+  
   const { data, error } = await supabase
     .from("venues")
     .insert([{
@@ -64,7 +69,8 @@ export const createVenue = async (venue: Omit<Venue, "id" | "createdAt">) => {
       zip: venue.zip,
       description: venue.description,
       court_count: venue.courtCount,
-      image_url: venue.imageUrl
+      image_url: venue.imageUrl,
+      admin_id: userData.user.id
     }])
     .select();
   

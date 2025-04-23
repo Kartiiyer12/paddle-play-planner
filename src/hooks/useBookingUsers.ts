@@ -27,10 +27,14 @@ export const useBookingUsers = () => {
         throw new Error("Only admins can access user data");
       }
 
-      // Get all bookings
+      // Get bookings only for slots managed by this admin
       const { data: bookings, error: bookingsError } = await supabase
         .from('bookings')
-        .select('user_id, user_name, created_at, checked_in');
+        .select(`
+          *,
+          slots:slot_id (admin_id)
+        `)
+        .eq('slots.admin_id', userData.user.id);
         
       if (bookingsError) throw bookingsError;
       
