@@ -1,7 +1,7 @@
 
 import { User } from '@/models/types';
 import { supabase } from '@/integrations/supabase/client';
-import { getProfile } from './profileService';
+import { getProfile, updateProfile } from './profileService';
 
 // Get the current authenticated user from Supabase auth
 export const getCurrentUser = async (): Promise<User | null> => {
@@ -119,6 +119,17 @@ export const registerUser = async (email: string, password: string, name?: strin
   
   // Set a flag that this is a new user
   sessionStorage.setItem('newUser', 'true');
+  
+  // If user registration is successful and we have a name, create their profile
+  if (data.user && name) {
+    try {
+      console.log("Creating initial profile for new user with name:", name);
+      await updateProfile(data.user.id, { name });
+    } catch (profileError) {
+      console.error("Error creating initial profile:", profileError);
+      // Continue anyway since the user was created successfully
+    }
+  }
   
   return data;
 };

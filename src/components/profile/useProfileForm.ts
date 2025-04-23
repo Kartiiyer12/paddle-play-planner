@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { getProfile, updateProfile } from "@/services/profileService";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 
 export type ProfileFormData = {
   name: string;
@@ -12,6 +13,7 @@ export type ProfileFormData = {
 };
 
 export const useProfileForm = (userId: string, onSaved?: () => void) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState<ProfileFormData>({
     name: "",
     age: "",
@@ -30,14 +32,22 @@ export const useProfileForm = (userId: string, onSaved?: () => void) => {
         const profile = await getProfile(userId);
         console.log("Loaded profile data:", profile);
         
+        // If we have a profile, use that data
         if (profile) {
           setFormData({
-            name: profile.name || "",
+            name: profile.name || user?.name || "",
             age: profile.age ? profile.age.toString() : "",
             sex: (profile.sex as "male" | "female" | "other") || "male",
             skillLevel: (profile.skill_level as "beginner" | "intermediate" | "advanced" | "expert" | "legendary") || "beginner",
             preferredVenues: profile.preferred_venues || []
           });
+        } 
+        // If no profile exists yet, but we have user data from auth context, use the name from there
+        else if (user?.name) {
+          setFormData(prev => ({
+            ...prev,
+            name: user.name || ""
+          }));
         }
       } catch (error) {
         console.error("Failed to load profile:", error);
@@ -47,7 +57,7 @@ export const useProfileForm = (userId: string, onSaved?: () => void) => {
     };
 
     loadProfile();
-  }, [userId]);
+  }, [userId, user]);
 
   const handleInputChange = (field: keyof ProfileFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
