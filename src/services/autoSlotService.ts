@@ -91,8 +91,10 @@ export const isAutoCreateSlotsEnabled = async (): Promise<boolean> => {
     
     // Try to query the settings
     try {
-      // Since we don't know if the settings table exists yet, we'll try a raw query
-      const { data, error } = await supabase.rpc('get_setting', { setting_key: 'auto_create_slots' });
+      // Call the get_setting RPC function with the correct parameter type
+      const { data, error } = await supabase.rpc('get_setting', { 
+        setting_key: 'auto_create_slots' 
+      });
       
       if (!error && data) {
         settingsTableExists = true;
@@ -115,10 +117,10 @@ export const isAutoCreateSlotsEnabled = async (): Promise<boolean> => {
  */
 export const setAutoCreateSlotsEnabled = async (enabled: boolean): Promise<void> => {
   try {
-    // We'll use RPC to upsert the setting
+    // Call the set_setting RPC function with correct parameter types
     const { error } = await supabase.rpc('set_setting', { 
       setting_key: 'auto_create_slots', 
-      setting_value: enabled ? 'true' : 'false' 
+      setting_value: enabled ? 'true' : 'false'
     });
     
     if (error) {
