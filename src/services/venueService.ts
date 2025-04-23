@@ -1,14 +1,11 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Venue } from "@/models/types";
 
 export const getVenues = async () => {
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData.user?.id;
-  
   const { data, error } = await supabase
     .from("venues")
     .select("*")
-    .eq("admin_id", userId)
     .order("name");
   
   if (error) {
@@ -72,7 +69,6 @@ export const createVenue = async (venue: Omit<Venue, "id" | "createdAt">) => {
     .select();
   
   if (error) {
-    console.error("Error creating venue:", error);
     throw error;
   }
   
@@ -139,32 +135,4 @@ export const deleteVenue = async (id: string) => {
   }
   
   return true;
-};
-
-/**
- * Gets all venues available for bookings (all venues, not just owned by current admin)
- */
-export const getAllVenuesForBooking = async () => {
-  const { data, error } = await supabase
-    .from("venues")
-    .select("*")
-    .order("name");
-  
-  if (error) {
-    throw error;
-  }
-  
-  return data.map(venue => ({
-    id: venue.id,
-    name: venue.name,
-    address: venue.address,
-    city: venue.city,
-    state: venue.state,
-    zip: venue.zip || '',
-    description: venue.description || '',
-    courtCount: venue.court_count,
-    imageUrl: venue.image_url || '',
-    createdAt: venue.created_at,
-    updatedAt: venue.updated_at
-  })) as Venue[];
 };

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,7 +12,7 @@ import SlotForm from "./SlotForm";
 import { Slot, Venue } from "@/models/types";
 import { getSlots, deleteSlot } from "@/services/slotService";
 import { getVenues } from "@/services/venueService";
-import { getAutoCreateSlotsEnabled, setAutoCreateSlotsEnabled, createSlotsForNext7Days } from "@/services/autoSlotService";
+import { isAutoCreateSlotsEnabled, setAutoCreateSlotsEnabled, createSlotsForNext7Days } from "@/services/autoSlotService";
 import PlayerCheckInDialog from "./PlayerCheckInDialog";
 import { format, isToday, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +40,7 @@ const SlotManagementPanel = () => {
       const [venueData, slotData, autoCreateEnabled] = await Promise.all([
         getVenues(),
         getSlots(),
-        getAutoCreateSlotsEnabled()
+        isAutoCreateSlotsEnabled()
       ]);
       setVenues(venueData);
       setSlots(slotData);
@@ -95,8 +96,10 @@ const SlotManagementPanel = () => {
       setAutoCreateSlots(enabled);
       
       if (enabled) {
+        // If enabling, run the slot creation process once to demonstrate
         await createSlotsForNext7Days();
         toast.success("Automatic slot creation enabled and slots for next week have been created");
+        // Reload slots to show the newly created ones
         loadData();
       } else {
         toast.success("Automatic slot creation disabled");

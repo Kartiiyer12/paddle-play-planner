@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface ProfileData {
@@ -71,26 +70,6 @@ export const updateProfile = async (userId: string, profileData: ProfileData) =>
     }
     
     console.log("Profile updated successfully", result.data);
-    
-    // Update the user metadata separately using auth.updateUser
-    if (profileData.name) {
-      try {
-        const { data, error: updateUserError } = await supabase.auth.updateUser({
-          data: { full_name: profileData.name }
-        });
-        
-        if (updateUserError) {
-          // Just log the error but don't fail the profile update
-          console.warn("Could not update user metadata:", updateUserError);
-        } else {
-          console.log("User metadata updated successfully with name:", profileData.name);
-        }
-      } catch (metadataError) {
-        console.warn("Error updating user metadata:", metadataError);
-        // We continue anyway as the profile was successfully updated
-      }
-    }
-    
     return true;
   } catch (error: any) {
     console.error("Error updating profile:", error.message);

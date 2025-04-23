@@ -1,113 +1,126 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { createSlot } from "./slotService";
+import { addDays, format, parseISO } from "date-fns";
+import { getSlotsByDateRange, createSlot } from "./slotService";
 import { getVenues } from "./venueService";
-import { format, addDays, parseISO, getDay } from "date-fns";
+import { Slot } from "@/models/types";
+import { supabase } from "@/integrations/supabase/client";
 
-// Define proper interface for RPC parameters
-interface GetSettingParams {
-  setting_key: string;
-}
+// Helper function to get date in YYYY-MM-DD format
+const getFormattedDate = (date: Date): string => {
+  return format(date, 'yyyy-MM-dd');
+};
 
-interface SetSettingParams {
-  setting_key: string;
-  setting_value: string;
-}
-
-/**
- * Checks if auto-creation of slots is enabled in the database.
- * @returns A promise that resolves to a boolean indicating whether auto-creation of slots is enabled.
- */
-export const getAutoCreateSlotsEnabled = async (): Promise<boolean> => {
-  try {
-    // Check if we have the settings table already by trying to query it
-    let settingsTableExists = false;
-    let enabled = false;
-    
-    // Try to query the settings
-    try {
-      const { data, error } = await supabase.rpc('get_setting', { 
-        setting_key: 'auto_create_slots' 
-      } as GetSettingParams);
-      
-      if (!error && data) {
-        settingsTableExists = true;
-        enabled = data === 'true';
-      }
-    } catch (e) {
-      console.error("Error checking auto_create_slots setting:", e);
-      // Table or function might not exist yet
-    }
-    
-    return enabled;
-  } catch (error) {
-    console.error("Error checking auto slot settings:", error);
-    return false;
-  }
+// Get weekday name (Monday, Tuesday, etc.) from a date
+const getWeekdayName = (date: Date): string => {
+  return format(date, 'EEEE');
 };
 
 /**
- * Updates the auto-create slots setting in the database.
- * @param enabled Boolean indicating whether auto-creation of slots is enabled
+ * Creates slots for the next 7 days based on template slots
+ * This should be run daily via a cron job or similar
  */
-export const setAutoCreateSlotsEnabled = async (enabled: boolean): Promise<void> => {
+export const createSlotsForNext7Days = async (): Promise<void> => {
   try {
-    const { error } = await supabase.rpc('set_setting', { 
-      setting_key: 'auto_create_slots', 
-      setting_value: enabled ? 'true' : 'false'
-    } as SetSettingParams);
+    // Get all venues
+    const venues = await getVenues();
     
-    if (error) {
-      console.error("Error updating auto-create slots setting:", error);
-      throw error;
+    // Get today's date and the date 7 days from now
+    const today = new Date();
+    const targetDate = addDays(today, 7);
+    
+    // Get the formatted dates for range query
+    const todayFormatted = getFormattedDate(today);
+    const targetDateFormatted = getFormattedDate(targetDate);
+    
+    // Get existing slots to avoid duplicates
+    const existingSlots = await getSlotsByDateRange(todayFormatted, targetDateFormatted);
+    
+    // For each venue, create slots
+    for (const venue of venues) {
+      // For demonstration purposes, we'll create a morning and evening slot
+      // In a real application, you would have template slots stored in a database
+      const defaultSlotTimes = [
+        { startTime: '09:00:00', endTime: '11:00:00', maxPlayers: 8 },
+        { startTime: '18:00:00', endTime: '20:00:00', maxPlayers: 8 }
+      ];
+      
+      // Create slots for the target date (7 days from today)
+      const dateToCreate = targetDate;
+      const dateFormatted = getFormattedDate(dateToCreate);
+      const weekdayName = getWeekdayName(dateToCreate);
+      
+      for (const slotTime of defaultSlotTimes) {
+        // Check if slot already exists to avoid duplicates
+        const slotExists = existingSlots.some(
+          existingSlot =>
+            existingSlot.date === dateFormatted &&
+            existingSlot.venueId === venue.id &&
+            existingSlot.startTime === slotTime.startTime
+        );
+        
+        if (!slotExists) {
+          // Create new slot
+          await createSlot({
+            venueId: venue.id,
+            date: dateFormatted,
+            startTime: slotTime.startTime,
+            endTime: slotTime.endTime,
+            maxPlayers: slotTime.maxPlayers,
+            updatedAt: new Date().toISOString()
+          });
+        }
+      }
     }
     
-    console.log(`Auto-create slots setting updated to: ${enabled}`);
+    console.log(`Successfully created slots for ${targetDateFormatted}`);
+    
   } catch (error) {
-    console.error("Error updating auto-create slots setting:", error);
+    console.error("Error creating slots for next 7 days:", error);
     throw error;
   }
 };
 
 /**
- * Alias for getAutoCreateSlotsEnabled to match naming in SlotManagementPanel.tsx
+ * Checks if the auto-create slots feature is enabled
  */
-export const isAutoCreateSlotsEnabled = getAutoCreateSlotsEnabled;
-
-/**
- * Creates slots for the next 7 days based on venue settings
- */
-export const createSlotsForNext7Days = async (): Promise<void> => {
+export const isAutoCreateSlotsEnabled = async (): Promise<boolean> => {
   try {
-    // Get only venues where the current user is the admin
-    const venues = await getVenues();
-    const today = new Date();
+    const { data, error } = await supabase
+      .from("settings")
+      .select("value")
+      .eq("key", "auto_create_slots")
+      .single();
     
-    // Process each venue
-    for (const venue of venues) {
-      // For demo purposes, create one slot per day for the next 7 days
-      for (let i = 1; i <= 7; i++) {
-        const date = addDays(today, i);
-        const formattedDate = format(date, 'yyyy-MM-dd');
-        const dayOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][getDay(date)];
-        
-        // Create a slot for this venue on this day (mid-day time slot for demo)
-        await createSlot({
-          venueId: venue.id,
-          date: formattedDate,
-          startTime: '10:00:00',
-          endTime: '12:00:00',
-          maxPlayers: 4,
-          updatedAt: new Date().toISOString()
-        });
-        
-        console.log(`Created auto slot for venue ${venue.name} on ${formattedDate}`);
-      }
+    if (error) {
+      console.error("Error checking auto-create slots setting:", error);
+      return false;
     }
     
-    console.log("Successfully created slots for the next 7 days");
+    return data?.value === 'true';
   } catch (error) {
-    console.error("Error creating slots for next 7 days:", error);
+    console.error("Error checking auto-create slots setting:", error);
+    return false;
+  }
+};
+
+/**
+ * Updates the auto-create slots setting
+ */
+export const setAutoCreateSlotsEnabled = async (enabled: boolean): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from("settings")
+      .upsert({ 
+        key: "auto_create_slots", 
+        value: enabled ? 'true' : 'false'
+      });
+    
+    if (error) {
+      console.error("Error updating auto-create slots setting:", error);
+      throw error;
+    }
+  } catch (error) {
+    console.error("Error updating auto-create slots setting:", error);
     throw error;
   }
 };

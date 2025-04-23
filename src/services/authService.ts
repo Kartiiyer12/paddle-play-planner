@@ -1,7 +1,7 @@
 
 import { User } from '@/models/types';
 import { supabase } from '@/integrations/supabase/client';
-import { getProfile, updateProfile } from './profileService';
+import { getProfile } from './profileService';
 
 // Get the current authenticated user from Supabase auth
 export const getCurrentUser = async (): Promise<User | null> => {
@@ -96,20 +96,14 @@ export const loginUser = async (email: string, password: string): Promise<User |
 };
 
 // Register a new user
-export const registerUser = async (email: string, password: string, name?: string, isAdmin: boolean = false) => {
-  // Prepare metadata with user information
-  const metadata = {
-    full_name: name,
-    role: isAdmin ? 'admin' : 'user'  // Set role based on isAdmin parameter
-  };
-  
-  console.log("Registering user with metadata:", metadata);
-  
+export const registerUser = async (email: string, password: string, name?: string) => {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: metadata
+      data: {
+        full_name: name
+      }
     }
   });
   
@@ -119,17 +113,6 @@ export const registerUser = async (email: string, password: string, name?: strin
   
   // Set a flag that this is a new user
   sessionStorage.setItem('newUser', 'true');
-  
-  // If user registration is successful and we have a name, create their profile
-  if (data.user && name) {
-    try {
-      console.log("Creating initial profile for new user with name:", name);
-      await updateProfile(data.user.id, { name });
-    } catch (profileError) {
-      console.error("Error creating initial profile:", profileError);
-      // Continue anyway since the user was created successfully
-    }
-  }
   
   return data;
 };
