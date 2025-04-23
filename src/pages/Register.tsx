@@ -35,11 +35,23 @@ const Register = () => {
       toast.error("Passwords do not match");
       return;
     }
+
+    // Basic admin code validation (can be more robust)
+    if (showAdminField && formData.adminCode !== "ADMIN123") {
+      toast.error("Invalid Admin Code");
+      return;
+    }
     
     setIsLoading(true);
     
     try {
-      await registerUser(formData.email, formData.password, formData.name);
+      await registerUser(
+        formData.email, 
+        formData.password, 
+        formData.name, 
+        showAdminField, // Pass whether to register as admin
+        formData.adminCode // Pass the admin code
+      );
       
       // Success - redirect to login page with a message
       toast.success("Registration successful! Please log in to complete your profile setup.");

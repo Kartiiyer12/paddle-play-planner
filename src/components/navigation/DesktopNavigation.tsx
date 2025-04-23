@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -24,7 +23,11 @@ const DesktopNavigation = () => {
 
   const handleBookNow = () => {
     if (user) {
-      navigate("/book-slot");
+      if (user.role === 'admin') {
+        navigate("/admin");
+      } else {
+        navigate("/book-slot");
+      }
     } else {
       navigate("/login");
     }
@@ -37,13 +40,17 @@ const DesktopNavigation = () => {
       </Link>
       {user ? (
         <>
-          <Link to="/my-bookings" className="text-gray-700 hover:text-pickleball-purple">
-            My Bookings
-          </Link>
-          <Link to="/profile" className="text-gray-700 hover:text-pickleball-purple">
-            My Profile
-          </Link>
-          {user?.role === 'admin' && (
+          {user.role !== 'admin' && (
+            <>
+              <Link to="/my-bookings" className="text-gray-700 hover:text-pickleball-purple">
+                My Bookings
+              </Link>
+              <Link to="/profile" className="text-gray-700 hover:text-pickleball-purple">
+                My Profile
+              </Link>
+            </>
+          )}
+          {user.role === 'admin' && (
             <Link to="/admin" className="text-gray-700 hover:text-pickleball-purple">
               Admin Panel
             </Link>

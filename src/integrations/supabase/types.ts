@@ -153,6 +153,7 @@ export type Database = {
           state: string
           updated_at: string
           zip: string | null
+          admin_id: string | null
         }
         Insert: {
           address: string
@@ -166,6 +167,7 @@ export type Database = {
           state: string
           updated_at?: string
           zip?: string | null
+          admin_id: string
         }
         Update: {
           address?: string
@@ -179,8 +181,17 @@ export type Database = {
           state?: string
           updated_at?: string
           zip?: string | null
+          admin_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "venues_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

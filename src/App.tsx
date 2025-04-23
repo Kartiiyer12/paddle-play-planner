@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +14,26 @@ import { AuthProvider } from "./context/AuthContext";
 import Profile from "./pages/Profile";
 import MyBookings from "./pages/MyBookings";
 import OldSlotsPanel from "./pages/admin/OldSlotsPanel";
+import { useAuth } from "./context/AuthContext";
+
+// Protected route component for non-admin users
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+  
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  if (user.role === 'admin') {
+    return <Navigate to="/admin" replace />;
+  }
+  
+  return <>{children}</>;
+};
 
 const App = () => {
   // Move queryClient creation inside the component
@@ -31,9 +50,23 @@ const App = () => {
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/my-bookings" element={<MyBookings />} />
-              <Route path="/book-slot" element={<BookSlot />} />
+              
+              {/* Protected routes for non-admin users */}
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              } />
+              <Route path="/my-bookings" element={
+                <ProtectedRoute>
+                  <MyBookings />
+                </ProtectedRoute>
+              } />
+              <Route path="/book-slot" element={
+                <ProtectedRoute>
+                  <BookSlot />
+                </ProtectedRoute>
+              } />
               <Route path="/dashboard" element={<Navigate to="/my-bookings" replace />} />
               <Route path="/new-user" element={<Navigate to="/profile" replace />} />
               

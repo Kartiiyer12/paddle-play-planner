@@ -1,4 +1,3 @@
-
 import { User } from '@/models/types';
 import { supabase } from '@/integrations/supabase/client';
 import { getProfile } from './profileService';
@@ -96,21 +95,37 @@ export const loginUser = async (email: string, password: string): Promise<User |
 };
 
 // Register a new user
-export const registerUser = async (email: string, password: string, name?: string) => {
+export const registerUser = async (email: string, password: string, name?: string, isAdmin?: boolean, adminCode?: string) => {
+  const options: { data?: { [key: string]: any } } = {
+    data: {
+      full_name: name,
+    },
+  };
+
+  // Add admin role to user metadata if isAdmin is true and code is valid
+  // In a real app, validate the adminCode against a secure source
+  if (isAdmin && adminCode === "ADMIN123") { 
+    options.data = { ...options.data, role: 'admin' };
+    console.log("Attempting to register user as ADMIN.");
+  } else {
+    options.data = { ...options.data, role: 'user' };
+    console.log("Attempting to register user as standard USER.");
+  }
+
+  console.log("Supabase signUp options:", options);
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: {
-      data: {
-        full_name: name
-      }
-    }
+    options,
   });
   
   if (error) {
+    console.error("Supabase signUp error:", error);
     throw error;
   }
   
+  console.log("Supabase signUp success data:", data);
   // Set a flag that this is a new user
   sessionStorage.setItem('newUser', 'true');
   

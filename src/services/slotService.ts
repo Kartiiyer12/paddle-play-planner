@@ -1,14 +1,37 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Slot } from "@/models/types";
 
+// Helper function to get allowed venue IDs for the current admin
+const getAllowedVenueIdsForAdmin = async (userId: string): Promise<string[]> => {
+  const { data: venueIds, error: venueError } = await supabase
+    .from('venues')
+    .select('id')
+    .eq('admin_id', userId);
+
+  if (venueError) {
+    console.error("Error fetching allowed venue IDs for admin:", venueError);
+    return []; // Return empty array on error
+  }
+  return venueIds.map(v => v.id);
+};
+
 export const getSlots = async () => {
-  const { data, error } = await supabase
-    .from("slots")
-    .select("*")
+  const { data: { user } } = await supabase.auth.getUser();
+  let query = supabase.from("slots").select("*");
+
+  if (user && user.user_metadata?.role === 'admin') {
+    const allowedVenueIds = await getAllowedVenueIdsForAdmin(user.id);
+    if (allowedVenueIds.length === 0) return []; // Admin owns no venues, so no slots
+    query = query.in('venue_id', allowedVenueIds);
+  }
+  // Non-admins see all slots
+
+  const { data, error } = await query
     .order("date", { ascending: true })
     .order("start_time", { ascending: true });
 
   if (error) {
+    console.error("Error fetching slots:", error);
     throw error;
   }
 
@@ -27,6 +50,18 @@ export const getSlots = async () => {
 };
 
 export const getSlotsByVenue = async (venueId: string) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  // Check if the user is an admin and if they own this specific venue
+  if (user && user.user_metadata?.role === 'admin') {
+    const allowedVenueIds = await getAllowedVenueIdsForAdmin(user.id);
+    if (!allowedVenueIds.includes(venueId)) {
+        console.warn(`Admin ${user.id} attempted to fetch slots for venue ${venueId} which they do not own.`);
+        return []; // Return empty if admin doesn't own the requested venue
+    }
+  }
+  // Non-admins can fetch slots for any specific venue
+
   const { data, error } = await supabase
     .from("slots")
     .select("*")
@@ -35,6 +70,7 @@ export const getSlotsByVenue = async (venueId: string) => {
     .order("start_time", { ascending: true });
 
   if (error) {
+    console.error(`Error fetching slots for venue ${venueId}:`, error);
     throw error;
   }
 
@@ -53,19 +89,40 @@ export const getSlotsByVenue = async (venueId: string) => {
 };
 
 export const getSlotsByDate = async (date: string, venueId?: string | null) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  let finalVenueIds: string[] | null = null;
+  
+  if (user && user.user_metadata?.role === 'admin') {
+      const allowedVenueIds = await getAllowedVenueIdsForAdmin(user.id);
+      if (allowedVenueIds.length === 0) return []; // Admin owns no venues
+      
+      if (venueId) { // Admin specified a venue
+          if (!allowedVenueIds.includes(venueId)) {
+              console.warn(`Admin ${user.id} requested slots for date ${date} and venue ${venueId} which they do not own.`);
+              return []; // Admin doesn't own the specified venue
+          }
+          finalVenueIds = [venueId]; // Filter by the single owned venue
+      } else {
+          finalVenueIds = allowedVenueIds; // Filter by all owned venues
+      }
+  } else if (venueId) {
+      finalVenueIds = [venueId]; // Non-admin specified a venue
+  }
+  // If non-admin and no venueId, finalVenueIds remains null (fetch all)
+
   let query = supabase
     .from("slots")
     .select("*")
-    .eq("date", date)
-    .order("start_time", { ascending: true });
+    .eq("date", date);
 
-  if (venueId) {
-    query = query.eq("venue_id", venueId);
+  if (finalVenueIds) {
+    query = query.in("venue_id", finalVenueIds);
   }
 
-  const { data, error } = await query;
+  const { data, error } = await query.order("start_time", { ascending: true });
 
   if (error) {
+    console.error(`Error fetching slots for date ${date}:`, error);
     throw error;
   }
 
@@ -84,21 +141,44 @@ export const getSlotsByDate = async (date: string, venueId?: string | null) => {
 };
 
 export const getSlotsByDateRange = async (startDate: string, endDate: string, venueId?: string | null) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  let finalVenueIds: string[] | null = null;
+  
+  if (user && user.user_metadata?.role === 'admin') {
+      const allowedVenueIds = await getAllowedVenueIdsForAdmin(user.id);
+      if (allowedVenueIds.length === 0) return []; // Admin owns no venues
+      
+      if (venueId) { // Admin specified a venue
+          if (!allowedVenueIds.includes(venueId)) {
+              console.warn(`Admin ${user.id} requested slots for range ${startDate}-${endDate} and venue ${venueId} which they do not own.`);
+              return []; // Admin doesn't own the specified venue
+          }
+          finalVenueIds = [venueId]; // Filter by the single owned venue
+      } else {
+          finalVenueIds = allowedVenueIds; // Filter by all owned venues
+      }
+  } else if (venueId) {
+      finalVenueIds = [venueId]; // Non-admin specified a venue
+  }
+  // If non-admin and no venueId, finalVenueIds remains null (fetch all)
+
   let query = supabase
     .from("slots")
     .select("*")
     .gte("date", startDate)
-    .lte("date", endDate)
-    .order("date", { ascending: true })
-    .order("start_time", { ascending: true });
-
-  if (venueId) {
-    query = query.eq("venue_id", venueId);
+    .lte("date", endDate);
+    
+  if (finalVenueIds) {
+      query = query.in("venue_id", finalVenueIds);
   }
+
+  query = query.order("date", { ascending: true })
+    .order("start_time", { ascending: true });
 
   const { data, error } = await query;
 
   if (error) {
+    console.error(`Error fetching slots for range ${startDate}-${endDate}:`, error);
     throw error;
   }
 

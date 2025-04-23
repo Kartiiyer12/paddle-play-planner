@@ -50,7 +50,11 @@ const Login = () => {
         navigate("/profile");
       } else {
         toast.success("Login successful!");
-        navigate("/my-bookings");
+        if (user.role === 'admin') {
+          navigate("/admin");
+        } else {
+          navigate("/my-bookings");
+        }
       }
     } catch (error: any) {
       console.error("Login error:", error);
@@ -60,76 +64,69 @@ const Login = () => {
     }
   };
 
-  if (user && !authLoading) {
-    return null;
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      <div className="flex-grow flex items-center justify-center py-16 px-4 bg-gray-50">
-        <div className="w-full max-w-md">
-          <Card className="border-none shadow-lg">
+      <div className="flex-grow pt-24 pb-16 px-4 bg-gray-50">
+        <div className="container mx-auto max-w-md">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-2xl text-center text-pickleball-purple">Login to PicklePlay</CardTitle>
-              <CardDescription className="text-center">
+              <CardTitle>Login</CardTitle>
+              <CardDescription>
                 Enter your credentials to access your account
               </CardDescription>
             </CardHeader>
-            <form onSubmit={handleLogin}>
-              <CardContent className="space-y-4">
+            <CardContent>
+              <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
                     type="email"
-                    placeholder="your@email.com"
-                    autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
-                    <Link to="/forgot-password" className="text-sm text-pickleball-purple hover:underline">
-                      Forgot password?
-                    </Link>
-                  </div>
+                  <Label htmlFor="password">Password</Label>
                   <Input
                     id="password"
                     type="password"
-                    placeholder="••••••••"
-                    autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
                 </div>
                 {error && (
-                  <div className="text-sm text-red-500 mt-2">
-                    {error}
-                  </div>
+                  <p className="text-sm text-red-500">{error}</p>
                 )}
-              </CardContent>
-              <CardFooter className="flex flex-col space-y-4">
                 <Button
                   type="submit"
                   className="w-full bg-pickleball-purple hover:bg-pickleball-purple/90"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Signing in..." : "Sign in"}
+                  {isLoading ? "Logging in..." : "Login"}
                 </Button>
-                <p className="text-center text-sm text-gray-600">
-                  Don't have an account?{" "}
-                  <Link to="/register" className="text-pickleball-purple hover:underline">
-                    Sign up
-                  </Link>
-                </p>
-              </CardFooter>
-            </form>
+              </form>
+            </CardContent>
+            <CardFooter className="flex justify-center">
+              <p className="text-sm text-gray-600">
+                Don't have an account?{" "}
+                <Link to="/register" className="text-pickleball-purple hover:underline">
+                  Register
+                </Link>
+              </p>
+            </CardFooter>
           </Card>
         </div>
       </div>
