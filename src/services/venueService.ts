@@ -2,10 +2,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Venue } from "@/models/types";
 
 export const getVenues = async () => {
+  const { data: userData } = await supabase.auth.getUser();
+  const userId = userData.user?.id;
+  
   const { data, error } = await supabase
     .from("venues")
     .select("*")
-    .eq("admin_id", supabase.auth.getUser().then(res => res.data.user?.id))
+    .eq("admin_id", userId)
     .order("name");
   
   if (error) {
@@ -54,8 +57,6 @@ export const getVenueById = async (id: string) => {
 };
 
 export const createVenue = async (venue: Omit<Venue, "id" | "createdAt">) => {
-  const { data: userData } = await supabase.auth.getUser();
-  
   const { data, error } = await supabase
     .from("venues")
     .insert([{
@@ -66,8 +67,7 @@ export const createVenue = async (venue: Omit<Venue, "id" | "createdAt">) => {
       zip: venue.zip,
       description: venue.description,
       court_count: venue.courtCount,
-      image_url: venue.imageUrl,
-      admin_id: userData.user?.id
+      image_url: venue.imageUrl
     }])
     .select();
   

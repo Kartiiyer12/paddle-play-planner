@@ -4,7 +4,7 @@ import { createSlot } from "./slotService";
 import { getVenues } from "./venueService";
 import { format, addDays, parseISO, getDay } from "date-fns";
 
-// Define interface for RPC parameters
+// Define proper interface for RPC parameters
 interface GetSettingParams {
   setting_key: string;
 }
@@ -28,7 +28,7 @@ export const getAutoCreateSlotsEnabled = async (): Promise<boolean> => {
     try {
       const { data, error } = await supabase.rpc('get_setting', { 
         setting_key: 'auto_create_slots' 
-      } satisfies GetSettingParams);
+      } as GetSettingParams);
       
       if (!error && data) {
         settingsTableExists = true;
@@ -55,7 +55,7 @@ export const setAutoCreateSlotsEnabled = async (enabled: boolean): Promise<void>
     const { error } = await supabase.rpc('set_setting', { 
       setting_key: 'auto_create_slots', 
       setting_value: enabled ? 'true' : 'false'
-    } satisfies SetSettingParams);
+    } as SetSettingParams);
     
     if (error) {
       console.error("Error updating auto-create slots setting:", error);
