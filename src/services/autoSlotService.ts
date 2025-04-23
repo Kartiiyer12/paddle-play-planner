@@ -85,18 +85,25 @@ export const createSlotsForNext7Days = async (): Promise<void> => {
  */
 export const isAutoCreateSlotsEnabled = async (): Promise<boolean> => {
   try {
-    const { data, error } = await supabase
-      .from("settings")
-      .select("value")
-      .eq("key", "auto_create_slots")
-      .single();
+    // First, check if the settings table exists by looking for the auto_create_slots setting
+    let settingsTableExists = false;
+    let settingValue = false;
     
-    if (error) {
-      console.error("Error checking auto-create slots setting:", error);
+    // Try to query the settings
+    try {
+      // Since we don't know if the settings table exists yet, we'll try a raw query
+      const { data, error } = await supabase.rpc('get_setting', { setting_key: 'auto_create_slots' });
+      
+      if (!error && data) {
+        settingsTableExists = true;
+        settingValue = data === 'true';
+      }
+    } catch (error) {
+      console.log("Settings table likely doesn't exist yet, will assume false:", error);
       return false;
     }
     
-    return data?.value === 'true';
+    return settingValue;
   } catch (error) {
     console.error("Error checking auto-create slots setting:", error);
     return false;
@@ -108,12 +115,11 @@ export const isAutoCreateSlotsEnabled = async (): Promise<boolean> => {
  */
 export const setAutoCreateSlotsEnabled = async (enabled: boolean): Promise<void> => {
   try {
-    const { error } = await supabase
-      .from("settings")
-      .upsert({ 
-        key: "auto_create_slots", 
-        value: enabled ? 'true' : 'false'
-      });
+    // We'll use RPC to upsert the setting
+    const { error } = await supabase.rpc('set_setting', { 
+      setting_key: 'auto_create_slots', 
+      setting_value: enabled ? 'true' : 'false' 
+    });
     
     if (error) {
       console.error("Error updating auto-create slots setting:", error);

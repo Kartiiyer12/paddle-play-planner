@@ -96,14 +96,20 @@ export const loginUser = async (email: string, password: string): Promise<User |
 };
 
 // Register a new user
-export const registerUser = async (email: string, password: string, name?: string) => {
+export const registerUser = async (email: string, password: string, name?: string, isAdmin: boolean = false) => {
+  // Prepare metadata with user information
+  const metadata = {
+    full_name: name,
+    role: isAdmin ? 'admin' : 'user'  // Set role based on isAdmin parameter
+  };
+  
+  console.log("Registering user with metadata:", metadata);
+  
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: {
-        full_name: name
-      }
+      data: metadata
     }
   });
   

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,8 @@ const Register = () => {
     setFormData({ ...formData, [name]: value });
   };
 
+  const VALID_ADMIN_CODE = "ADMIN123"; // For testing purposes
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -39,7 +42,17 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      await registerUser(formData.email, formData.password, formData.name);
+      // Check if user is registering as admin and has provided the correct admin code
+      const isAdmin = showAdminField && formData.adminCode === VALID_ADMIN_CODE;
+      
+      if (showAdminField && formData.adminCode !== VALID_ADMIN_CODE) {
+        toast.error("Invalid admin code");
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log("Registering user with admin status:", isAdmin);
+      await registerUser(formData.email, formData.password, formData.name, isAdmin);
       
       // Success - redirect to login page with a message
       toast.success("Registration successful! Please log in to complete your profile setup.");
