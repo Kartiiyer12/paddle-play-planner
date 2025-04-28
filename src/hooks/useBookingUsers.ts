@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BookingUser } from "@/models/types";
@@ -67,13 +68,14 @@ export const useBookingUsers = () => {
       }
 
       // Group by user_id and count bookings (from the filtered list)
-      // Define the structure for the map including email
+      // Define the structure for the map including email and slot_coins
       type UserMapEntry = {
         id: string;
         name: string | null;
-        email: string | null; // Add email here
+        email: string | null;
         bookingsCount: number;
         lastBookingDate?: string;
+        slotCoins?: number;
       };
       const userMap = new Map<string, UserMapEntry>();
       
@@ -94,13 +96,14 @@ export const useBookingUsers = () => {
           }
           
         } else {
-            // Initialize new entry with null email
+            // Initialize new entry with null email and slot_coins
             existingUser = {
                 id: userId,
                 name: userName || 'Unknown User', // Default to Unknown if name is null
                 email: null, // Initialize email as null
                 bookingsCount: 1,
-                lastBookingDate: booking.created_at
+                lastBookingDate: booking.created_at,
+                slotCoins: 0
             };
             userMap.set(userId, existingUser);
         }
@@ -109,15 +112,14 @@ export const useBookingUsers = () => {
       // Convert map to array
       const userArray = Array.from(userMap.values());
       
-      // Fetch profile details (including email) for users
-      // Note: Ensure RLS on profiles allows admins to see these details if needed
+      // Fetch profile details (including email and slot_coins) for users
       const userIdsToFetch = userArray.map(u => u.id);
       
       if (userIdsToFetch.length > 0) {
           console.log("Fetching profile details for users:", userIdsToFetch);
           const { data: profiles, error: profilesError } = await supabase
               .from('profiles')
-              .select('id, name, email') // Select email as well
+              .select('id, name, email, slot_coins') // Select slot_coins as well
               .in('id', userIdsToFetch);
               
           if (!profilesError && profiles) {
@@ -125,23 +127,23 @@ export const useBookingUsers = () => {
                   if (!profile) return;
                   const user = userMap.get(profile.id);
                   if (user) {
-                      // Update name and email from profile if available
-                      user.name = profile.name || user.name; // Keep existing name if profile name is null
-                      user.email = profile.email || null; 
+                      // Update name, email, and slot_coins from profile if available
+                      user.name = profile.name || user.name; 
+                      user.email = profile.email || null;
+                      user.slotCoins = profile.slot_coins || 0;
                   }
               });
           } else if (profilesError) {
               console.error("Error fetching profiles for user details:", profilesError);
-              // Decide if this error should be surfaced to the user
-              // toast.error("Could not fetch full user details.");
           }
       }
       
-      // Map final data to BookingUser[] type, ensuring email is a string
+      // Map final data to BookingUser[] type
       const finalUsers: BookingUser[] = Array.from(userMap.values()).map(u => ({
           ...u,
           name: u.name || 'Unknown User', // Ensure name is never null
           email: u.email || '', // Ensure email is never null
+          slotCoins: u.slotCoins || 0 // Ensure slotCoins is never null
       }));
 
       setUsers(finalUsers);

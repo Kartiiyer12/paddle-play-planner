@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Table, 
   TableHeader, 
@@ -21,6 +21,7 @@ import {
 import { PaymentConfig, usePaymentConfigs } from "@/hooks/usePaymentConfigs";
 import { Edit, Save, Trash2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useVenues } from "@/hooks/useVenues";
 
 interface PaymentConfigListProps {
   venueId: string | null;
@@ -32,6 +33,13 @@ const PaymentConfigList = ({ venueId }: PaymentConfigListProps) => {
   const [editSlotCount, setEditSlotCount] = useState(0);
   const [editAmount, setEditAmount] = useState(0);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { venues } = useVenues();
+
+  const getVenueName = (venueId: string | null) => {
+    if (!venueId) return "Unknown Venue";
+    const venue = venues.find(v => v.id === venueId);
+    return venue ? venue.name : "Unknown Venue";
+  };
 
   const handleEditClick = (config: PaymentConfig) => {
     setEditingConfig(config);
@@ -89,13 +97,14 @@ const PaymentConfigList = ({ venueId }: PaymentConfigListProps) => {
         <CardHeader>
           <CardTitle>Current Payment Configurations</CardTitle>
           <CardDescription>
-            Manage your slot package pricing
+            Manage your slot package pricing for {getVenueName(venueId)}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Venue</TableHead>
                 <TableHead>Slots</TableHead>
                 <TableHead>Price (€)</TableHead>
                 <TableHead>Actions</TableHead>
@@ -104,6 +113,7 @@ const PaymentConfigList = ({ venueId }: PaymentConfigListProps) => {
             <TableBody>
               {configs.map((config) => (
                 <TableRow key={config.id}>
+                  <TableCell>{getVenueName(config.venue_id)}</TableCell>
                   <TableCell>{config.slot_count}</TableCell>
                   <TableCell>€{config.amount.toFixed(2)}</TableCell>
                   <TableCell>

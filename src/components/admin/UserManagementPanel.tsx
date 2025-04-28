@@ -5,8 +5,8 @@ import {
   Users, 
   Search, 
   Edit, 
-  Shield,
-  Filter 
+  Filter, 
+  Save
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { 
@@ -15,15 +15,28 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from "@/components/ui/dialog";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useBookingUsers } from "@/hooks/useBookingUsers";
 import { format } from "date-fns";
+import { profileService } from "@/services/profileService";
 
 const UserManagementPanel = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
-  const { users, isLoading } = useBookingUsers();
+  const { users, isLoading, refetch } = useBookingUsers();
+  
+  const [editingUser, setEditingUser] = useState<{ id: string, name: string, coins: number } | null>(null);
+  const [slotCoins, setSlotCoins] = useState(0);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -34,12 +47,36 @@ const UserManagementPanel = () => {
     return matchesSearch;
   });
 
-  const handleMakeAdmin = (userId: string) => {
-    toast.info(`Making user with ID ${userId} an admin is not implemented yet`);
+  const handleEditUser = async (userId: string, name: string) => {
+    try {
+      // Fetch the user's current profile data including slot_coins
+      const profileData = await profileService.getProfile(userId);
+      const currentCoins = profileData?.slot_coins || 0;
+      
+      setEditingUser({ id: userId, name, coins: currentCoins });
+      setSlotCoins(currentCoins);
+      setIsEditDialogOpen(true);
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      toast.error("Could not load user data");
+    }
   };
 
-  const handleEditUser = (userId: string) => {
-    toast.info(`Editing user with ID ${userId} is not implemented yet`);
+  const handleSaveCoins = async () => {
+    if (!editingUser) return;
+    
+    try {
+      await profileService.updateProfile(editingUser.id, {
+        slot_coins: slotCoins
+      });
+      
+      toast.success(`Updated slot coins for ${editingUser.name}`);
+      setIsEditDialogOpen(false);
+      refetch(); // Refresh the user list to show updated data
+    } catch (error) {
+      console.error("Error updating slot coins:", error);
+      toast.error("Failed to update slot coins");
+    }
   };
 
   return (
@@ -94,6 +131,7 @@ const UserManagementPanel = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bookings</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Booking</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Slot Coins</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -112,25 +150,22 @@ const UserManagementPanel = () => {
                           {user.lastBookingDate ? format(new Date(user.lastBookingDate), 'MMM d, yyyy') : 'N/A'}
                         </div>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">
+                          {/* We'll display actual slot coins from the profile once we've set it up */}
+                          {user.slotCoins || 0}
+                        </div>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex justify-end space-x-2">
+                        <div className="flex justify-end">
                           <Button 
                             variant="outline" 
                             size="sm"
                             className="text-pickleball-purple border-pickleball-purple" 
-                            onClick={() => handleEditUser(user.id)}
+                            onClick={() => handleEditUser(user.id, user.name)}
                           >
                             <Edit size={14} className="mr-1" />
-                            View Details
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            className="text-blue-600 border-blue-600" 
-                            onClick={() => handleMakeAdmin(user.id)}
-                          >
-                            <Shield size={14} className="mr-1" />
-                            Make Admin
+                            Edit Coins
                           </Button>
                         </div>
                       </td>
@@ -138,7 +173,7 @@ const UserManagementPanel = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                       No users found with booking history.
                     </td>
                   </tr>
@@ -148,6 +183,41 @@ const UserManagementPanel = () => {
           </div>
         )}
       </CardContent>
+
+      {/* Edit User Coins Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Slot Coins</DialogTitle>
+            <DialogDescription>
+              {editingUser && `Update slot coins for ${editingUser.name}`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="slotCoins" className="text-right">
+                Slot Coins
+              </label>
+              <Input
+                id="slotCoins"
+                type="number"
+                min="0"
+                value={slotCoins}
+                onChange={(e) => setSlotCoins(parseInt(e.target.value) || 0)}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveCoins}>
+              <Save className="mr-2 h-4 w-4" /> Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

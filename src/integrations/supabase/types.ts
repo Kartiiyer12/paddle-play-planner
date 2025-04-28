@@ -102,6 +102,7 @@ export type Database = {
           preferred_venues: string[] | null
           sex: string | null
           skill_level: string | null
+          slot_coins: number | null
           updated_at: string | null
         }
         Insert: {
@@ -113,6 +114,7 @@ export type Database = {
           preferred_venues?: string[] | null
           sex?: string | null
           skill_level?: string | null
+          slot_coins?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -124,6 +126,7 @@ export type Database = {
           preferred_venues?: string[] | null
           sex?: string | null
           skill_level?: string | null
+          slot_coins?: number | null
           updated_at?: string | null
         }
         Relationships: []

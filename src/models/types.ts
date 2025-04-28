@@ -58,4 +58,5 @@ export interface BookingUser {
   name: string;
   bookingsCount: number;
   lastBookingDate?: string;
+  slotCoins?: number;
 }

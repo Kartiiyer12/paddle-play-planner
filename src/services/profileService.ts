@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export interface ProfileData {
@@ -6,6 +7,7 @@ export interface ProfileData {
   sex?: string;
   skill_level?: string;
   preferred_venues?: string[];
+  slot_coins?: number;
 }
 
 export const updateProfile = async (userId: string, profileData: ProfileData) => {
@@ -19,8 +21,13 @@ export const updateProfile = async (userId: string, profileData: ProfileData) =>
       throw new Error("No authenticated user found");
     }
 
-    if (currentUser.id !== userId) {
-      throw new Error("You can only update your own profile");
+    // For admins updating slot coins of users, we need to bypass the user ID check
+    // Only do this for slot_coins updates by admins
+    const isAdmin = currentUser.user_metadata?.role === 'admin';
+    const isOnlyUpdatingSlotCoins = Object.keys(profileData).length === 1 && 'slot_coins' in profileData;
+
+    if (currentUser.id !== userId && !(isAdmin && isOnlyUpdatingSlotCoins)) {
+      throw new Error("You can only update your own profile unless you're an admin updating slot coins");
     }
 
     // Add better logging to diagnose issues
@@ -98,4 +105,9 @@ export const getProfile = async (userId: string) => {
     console.error("Error getting profile:", error.message);
     return null;
   }
+};
+
+export const profileService = {
+  updateProfile,
+  getProfile
 };
