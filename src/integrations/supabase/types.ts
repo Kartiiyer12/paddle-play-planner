@@ -57,6 +57,41 @@ export type Database = {
           },
         ]
       }
+      payment_configs: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          slot_count: number
+          updated_at: string | null
+          venue_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          slot_count: number
+          updated_at?: string | null
+          venue_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          slot_count?: number
+          updated_at?: string | null
+          venue_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_configs_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           age: number | null

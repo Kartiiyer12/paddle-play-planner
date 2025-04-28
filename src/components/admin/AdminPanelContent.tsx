@@ -70,6 +70,10 @@ const AdminPanelContent = () => {
         <TabsContent value="settings">
           <SettingsPanel />
         </TabsContent>
+
+        <TabsContent value="payments">
+          <PaymentSetupPanel />
+        </TabsContent>
       </Tabs>
     </div>
   );

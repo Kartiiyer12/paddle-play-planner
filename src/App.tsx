@@ -76,6 +76,7 @@ const App = () => {
               <Route path="/admin/slots" element={<AdminPanel />} />
               <Route path="/admin/users" element={<AdminPanel />} />
               <Route path="/admin/settings" element={<AdminPanel />} />
+              <Route path="/admin/payments" element={<AdminPanel />} />
               <Route path="/admin/old-slots" element={<OldSlotsPanel />} />
               
               <Route path="*" element={<NotFound />} />

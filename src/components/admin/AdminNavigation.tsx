@@ -1,10 +1,10 @@
-
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
   Users, 
   Building2, 
   CalendarDays,
-  Settings
+  Settings,
+  Euro
 } from "lucide-react";
 import {
   NavigationMenu,
@@ -38,13 +38,17 @@ const AdminNavigation = () => {
       icon: <Users className="h-5 w-5" />
     },
     {
+      label: "Payments",
+      path: "/admin/payments",
+      icon: <Euro className="h-5 w-5" />
+    },
+    {
       label: "Settings",
       path: "/admin/settings",
       icon: <Settings className="h-5 w-5" />
     }
   ];
 
-  // Mobile version (bottom navigation for small screens)
   const mobileNav = (
     <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white border-t border-gray-200 p-2">
       <div className="flex justify-around">
@@ -67,7 +71,6 @@ const AdminNavigation = () => {
     </div>
   );
 
-  // Desktop version
   const desktopNav = (
     <NavigationMenu className="hidden md:flex">
       <NavigationMenuList className="flex space-x-2">
