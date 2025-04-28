@@ -21,13 +21,13 @@ const UserManagementPanel = () => {
     
     if (filter === "all") return matchesSearch;
     if (filter === "regular" && user.bookingsCount > 3) return matchesSearch;
-    if (filter === "zero-coins" && user.coins === 0) return matchesSearch;
+    if (filter === "zero-coins" && user.slotCoins === 0) return matchesSearch;
     
     return matchesSearch;
   });
 
-  const handleEditUser = async (userId: string, name: string, coins: number) => {
-    setEditingUser({ id: userId, name, coins });
+  const handleEditUser = async (userId: string, name: string, slotCoins: number) => {
+    setEditingUser({ id: userId, name, coins: slotCoins });
     setIsEditDialogOpen(true);
   };
 
