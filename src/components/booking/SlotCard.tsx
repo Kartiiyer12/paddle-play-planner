@@ -2,8 +2,9 @@
 import { Button } from "@/components/ui/button";
 import { Slot } from "@/models/types";
 import { format } from "date-fns";
-import { CalendarCheck, Clock, Users, Check, X } from "lucide-react";
+import { CalendarCheck, Clock, Users, Check, X, Coins } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface SlotCardProps {
   slot: Slot;
@@ -12,6 +13,7 @@ interface SlotCardProps {
   isBooking: boolean;
   canBook: boolean;
   isBooked: boolean;
+  userSlotCoins?: number;
 }
 
 const SlotCard = ({ 
@@ -20,7 +22,8 @@ const SlotCard = ({
   onBookSlot, 
   isBooking,
   canBook,
-  isBooked
+  isBooked,
+  userSlotCoins = 0
 }: SlotCardProps) => {
   
   // Format times for display
@@ -32,6 +35,7 @@ const SlotCard = ({
   
   // Check if slot is full
   const isFull = availableSpots <= 0;
+  const hasNoCoins = userSlotCoins <= 0 && !canBook;
   
   return (
     <div className={`border rounded-lg overflow-hidden ${isFull ? 'bg-gray-50' : 'bg-white'}`}>
@@ -68,18 +72,43 @@ const SlotCard = ({
               {isFull ? " (No spots left)" : availableSpots === 1 ? " (Last spot!)" : ""}
             </span>
           </div>
+          
+          {hasNoCoins && (
+            <div className="flex items-center text-sm text-red-600">
+              <Coins className="h-4 w-4 mr-2" />
+              <span>No coins available</span>
+            </div>
+          )}
         </div>
         
         <div className="mt-4 pt-4 border-t">
-          <Button
-            onClick={() => onBookSlot(slot.id, slot.venueId)}
-            className={`w-full ${isFull ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed" : "bg-pickleball-purple hover:bg-pickleball-purple/90"}`}
-            disabled={isBooking || isFull || !canBook || isBooked}
-          >
-            {isBooked ? "Already Booked" : 
-              isFull ? "Fully Booked" : 
-              isBooking ? "Booking..." : "Book Slot"}
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <Button
+                    onClick={() => onBookSlot(slot.id, slot.venueId)}
+                    className={`w-full ${
+                      isFull || !canBook || isBooked ? 
+                      "bg-gray-400 hover:bg-gray-400 cursor-not-allowed" : 
+                      "bg-pickleball-purple hover:bg-pickleball-purple/90"
+                    }`}
+                    disabled={isBooking || isFull || !canBook || isBooked}
+                  >
+                    {isBooked ? "Already Booked" : 
+                      isFull ? "Fully Booked" : 
+                      hasNoCoins ? "Not Enough Coins" :
+                      isBooking ? "Booking..." : "Book Slot"}
+                  </Button>
+                </div>
+              </TooltipTrigger>
+              {hasNoCoins && (
+                <TooltipContent>
+                  <p>You need at least 1 coin to book a slot</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
     </div>

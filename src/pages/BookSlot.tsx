@@ -12,6 +12,7 @@ import { useAuth } from "@/context/AuthContext";
 import VenueSelector from "@/components/booking/VenueSelector";
 import AvailableSlots from "@/components/booking/AvailableSlots";
 import { add, format } from "date-fns";
+import { getAdminSettings } from "@/services/adminSettingsService";
 
 const BookSlot = () => {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ const BookSlot = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isBooking, setIsBooking] = useState(false);
   const [userBookedSlotIds, setUserBookedSlotIds] = useState<string[]>([]);
+  const [allowBookingWithoutCoins, setAllowBookingWithoutCoins] = useState(false);
   
   useEffect(() => {
     if (!isLoadingAuth) {
@@ -35,6 +37,25 @@ const BookSlot = () => {
       loadInitialData();
     }
   }, [user, isLoadingAuth, navigate]);
+
+  useEffect(() => {
+    if (selectedVenue) {
+      loadAdminSettings();
+    }
+  }, [selectedVenue]);
+
+  const loadAdminSettings = async () => {
+    if (selectedVenue) {
+      try {
+        const settings = await getAdminSettings(selectedVenue);
+        setAllowBookingWithoutCoins(settings?.allow_booking_without_coins || false);
+      } catch (error) {
+        console.error("Error loading admin settings:", error);
+        // Default to false if there's an error or no settings
+        setAllowBookingWithoutCoins(false);
+      }
+    }
+  };
 
   const loadInitialData = async () => {
     setIsLoading(true);
@@ -88,6 +109,7 @@ const BookSlot = () => {
   const handleVenueChange = async (venueId: string) => {
     setSelectedVenue(venueId);
     await loadSlotsForNext7Days(venueId);
+    await loadAdminSettings();
   };
 
   const handleBookSlot = async (slotId: string, venueId: string) => {
@@ -114,6 +136,8 @@ const BookSlot = () => {
       setIsBooking(false);
     }
   };
+
+  const canBookWithCoins = (user?.slotCoins || 0) > 0 || allowBookingWithoutCoins;
 
   if (isLoadingAuth || (isLoading && !availableSlots.length)) {
     return (
@@ -156,6 +180,8 @@ const BookSlot = () => {
               onBookSlot={handleBookSlot}
               isBooking={isBooking}
               userBookedSlotIds={userBookedSlotIds}
+              userSlotCoins={user?.slotCoins || 0}
+              allowBookingWithoutCoins={allowBookingWithoutCoins}
             />
           </div>
         </div>
