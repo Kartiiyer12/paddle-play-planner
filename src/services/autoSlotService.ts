@@ -80,33 +80,22 @@ export const createSlotsForNext7Days = async (): Promise<void> => {
   }
 };
 
+// Local state for feature flags/settings
+const featureFlags = {
+  autoCreateSlots: false
+};
+
 /**
  * Checks if the auto-create slots feature is enabled
  */
 export const isAutoCreateSlotsEnabled = async (): Promise<boolean> => {
   try {
-    // Check if the settings table exists first
-    const { count, error: tableCheckError } = await supabase
-      .from('settings')
-      .select('*', { count: 'exact', head: true });
-      
-    if (tableCheckError || count === null || count === 0) {
-      // Table might not exist or is empty
-      return false;
+    // We'll use local storage for a simpler approach
+    const storedValue = localStorage.getItem('auto_create_slots');
+    if (storedValue !== null) {
+      featureFlags.autoCreateSlots = storedValue === 'true';
     }
-    
-    const { data, error } = await supabase
-      .from('settings')
-      .select('value')
-      .eq('key', 'auto_create_slots')
-      .maybeSingle();
-    
-    if (error) {
-      console.error("Error checking auto-create slots setting:", error);
-      return false;
-    }
-    
-    return data?.value === 'true';
+    return featureFlags.autoCreateSlots;
   } catch (error) {
     console.error("Error checking auto-create slots setting:", error);
     return false;
@@ -118,28 +107,10 @@ export const isAutoCreateSlotsEnabled = async (): Promise<boolean> => {
  */
 export const setAutoCreateSlotsEnabled = async (enabled: boolean): Promise<void> => {
   try {
-    // Check if the settings table exists
-    const { count, error: tableCheckError } = await supabase
-      .from('settings')
-      .select('*', { count: 'exact', head: true });
-      
-    if (tableCheckError) {
-      console.error("Error checking settings table:", tableCheckError);
-      throw tableCheckError;
-    }
-      
-    // If settings table exists
-    const { error } = await supabase
-      .from('settings')
-      .upsert({ 
-        key: 'auto_create_slots', 
-        value: enabled ? 'true' : 'false' 
-      });
-    
-    if (error) {
-      console.error("Error updating auto-create slots setting:", error);
-      throw error;
-    }
+    // Update local storage
+    localStorage.setItem('auto_create_slots', enabled ? 'true' : 'false');
+    featureFlags.autoCreateSlots = enabled;
+    console.log(`Auto-create slots set to: ${enabled}`);
   } catch (error) {
     console.error("Error updating auto-create slots setting:", error);
     throw error;
