@@ -1,10 +1,13 @@
 
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import PaymentConfigForm from "./PaymentConfigForm";
 import { Euro } from "lucide-react";
+import PaymentConfigForm from "./PaymentConfigForm";
+import PaymentConfigList from "./PaymentConfigList";
+import { useVenues } from "@/hooks/useVenues";
 
 const PaymentSetupPanel = () => {
+  const { selectedVenue } = useVenues();
+
   return (
     <>
       <Card className="mb-6">
@@ -22,6 +25,7 @@ const PaymentSetupPanel = () => {
       </Card>
 
       <PaymentConfigForm />
+      <PaymentConfigList venueId={selectedVenue} />
     </>
   );
 };
