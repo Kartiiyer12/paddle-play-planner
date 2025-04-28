@@ -5,7 +5,8 @@ export interface User {
   isVerified: boolean;
   role: "user" | "admin";
   createdAt: string;
-  preferredVenues?: string[]; // Add this property
+  preferredVenues?: string[];
+  slotCoins?: number;
 }
 
 export interface Venue {
