@@ -129,7 +129,7 @@ export const bookSlot = async (slotId: string, venueId: string) => {
     throw new Error("Not enough coins to book this slot");
   }
 
-  // Start a transaction
+  // Call the stored procedure to book the slot and handle coin deduction
   const { data, error } = await supabase.rpc('book_slot_with_coin', {
     slot_id_param: slotId,
     venue_id_param: venueId,
@@ -139,6 +139,11 @@ export const bookSlot = async (slotId: string, venueId: string) => {
   
   if (error) {
     throw error;
+  }
+  
+  // Add type check to ensure data isn't null before accessing properties
+  if (!data) {
+    throw new Error("Failed to book slot: No data returned");
   }
   
   return {
