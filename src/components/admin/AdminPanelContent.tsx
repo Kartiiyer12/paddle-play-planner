@@ -8,6 +8,7 @@ import VenueManagementPanel from "./VenueManagementPanel";
 import SlotManagementPanel from "./SlotManagementPanel";
 import SlotConfigPanel from "./SlotConfigPanel";
 import SettingsPanel from "./SettingsPanel";
+import PaymentSetupPanel from "./PaymentSetupPanel";
 
 const AdminPanelContent = () => {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ const AdminPanelContent = () => {
     if (path.includes('/users')) return 'users';
     if (path.includes('/venues')) return 'venues';
     if (path.includes('/settings')) return 'settings';
+    if (path.includes('/payments')) return 'payments';
     
     return 'slots'; // Default tab is now slots
   });
@@ -32,6 +34,8 @@ const AdminPanelContent = () => {
       setActiveTab('venues');
     } else if (path.includes('/settings')) {
       setActiveTab('settings');
+    } else if (path.includes('/payments')) {
+      setActiveTab('payments');
     } else if (path.includes('/slots') || path === '/admin') {
       setActiveTab('slots');
     }
