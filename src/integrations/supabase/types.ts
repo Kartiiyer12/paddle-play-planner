@@ -9,6 +9,41 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_settings: {
+        Row: {
+          admin_id: string
+          allow_booking_without_coins: boolean
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          venue_id: string
+        }
+        Insert: {
+          admin_id: string
+          allow_booking_without_coins?: boolean
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          venue_id: string
+        }
+        Update: {
+          admin_id?: string
+          allow_booking_without_coins?: boolean
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_settings_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: true
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           checked_in: boolean | null

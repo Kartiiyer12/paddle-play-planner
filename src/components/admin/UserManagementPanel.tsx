@@ -21,6 +21,7 @@ const UserManagementPanel = () => {
     
     if (filter === "all") return matchesSearch;
     if (filter === "regular" && user.bookingsCount > 3) return matchesSearch;
+    if (filter === "zero-coins" && user.coins === 0) return matchesSearch;
     
     return matchesSearch;
   });

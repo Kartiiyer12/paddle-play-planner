@@ -43,6 +43,7 @@ const UsersSearchAndFilter = ({
           <DropdownMenuContent>
             <DropdownMenuItem onClick={() => onFilterChange("all")}>All Users</DropdownMenuItem>
             <DropdownMenuItem onClick={() => onFilterChange("regular")}>Regular Players (3+ bookings)</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onFilterChange("zero-coins")}>Zero Coins</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

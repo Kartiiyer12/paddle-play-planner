@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { toast } from "sonner";
+import BookingWithoutCoinsToggle from "./BookingWithoutCoinsToggle";
 
 const SettingsPanel = () => {
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -37,6 +38,9 @@ const SettingsPanel = () => {
         </div>
 
         <div className="space-y-6">
+          {/* Booking Settings - New Section */}
+          <BookingWithoutCoinsToggle />
+          
           {/* Notification Settings */}
           <div className="space-y-4">
             <h3 className="font-medium">Notification Settings</h3>
