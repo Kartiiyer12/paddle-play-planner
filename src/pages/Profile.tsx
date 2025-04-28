@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,6 +40,17 @@ const Profile = () => {
     }
   };
 
+  const handleProfileSaved = () => {
+    toast.success("Profile updated successfully");
+    
+    // If this was a new user completing their profile for the first time
+    const isNewUser = sessionStorage.getItem('newUser');
+    if (isNewUser) {
+      sessionStorage.removeItem('newUser');
+      navigate("/my-bookings");
+    }
+  };
+
   if (isLoadingAuth || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -56,7 +66,7 @@ const Profile = () => {
       <div className="flex-grow pt-24 pb-16 px-4 bg-gray-50">
         <div className="container mx-auto">
           <div className="mb-6">
-            <BackButton to="/book-slot" />
+            <BackButton to="/my-bookings" />
             <h1 className="text-3xl font-bold text-gray-900 mt-4">My Profile</h1>
             <p className="text-gray-600 mt-2">
               Update your personal information and preferences
@@ -72,7 +82,7 @@ const Profile = () => {
                 <ProfileForm 
                   userId={user.id} 
                   venues={venues} 
-                  onSaved={() => toast.success("Profile updated successfully")}
+                  onSaved={handleProfileSaved}
                 />
               )}
             </CardContent>

@@ -49,8 +49,8 @@ const Register = () => {
         formData.email, 
         formData.password, 
         formData.name, 
-        showAdminField, // Pass whether to register as admin
-        formData.adminCode // Pass the admin code
+        showAdminField, 
+        formData.adminCode 
       );
       
       // Success - redirect to login page with a message

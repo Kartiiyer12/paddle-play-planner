@@ -82,11 +82,10 @@ export const loginUser = async (email: string, password: string): Promise<User |
     sessionStorage.setItem('newUser', 'true');
   }
   
-  // Map Supabase user to our User model
   return {
     id: data.user.id,
     email: data.user.email || '',
-    name: metadata?.full_name || data.user.email?.split('@')[0] || 'User',
+    name: metadata?.name || data.user.email?.split('@')[0] || 'User',
     isVerified: data.user.email_confirmed_at !== null,
     role: metadata?.role || 'user',
     createdAt: data.user.created_at || new Date().toISOString(),
