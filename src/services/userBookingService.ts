@@ -129,31 +129,27 @@ export const bookSlot = async (slotId: string, venueId: string) => {
     throw new Error("Not enough coins to book this slot");
   }
 
-  const { data, error } = await supabase
-    .from("bookings")
-    .insert([{
-      user_id: userData.user.id,
-      slot_id: slotId,
-      venue_id: venueId,
-      status: "confirmed",
-      user_name: profileData?.name || null,
-      checked_in: false
-    }])
-    .select();
+  // Start a transaction
+  const { data, error } = await supabase.rpc('book_slot_with_coin', {
+    slot_id_param: slotId,
+    venue_id_param: venueId,
+    allow_booking_without_coins_param: allowBookingWithoutCoins,
+    user_name_param: profileData?.name || null
+  });
   
   if (error) {
     throw error;
   }
   
   return {
-    id: data[0].id,
-    userId: data[0].user_id,
-    slotId: data[0].slot_id,
-    venueId: data[0].venue_id,
-    status: data[0].status,
-    createdAt: data[0].created_at,
-    checkedIn: data[0].checked_in || false,
-    userName: data[0].user_name || ''
+    id: data.id,
+    userId: data.user_id,
+    slotId: data.slot_id,
+    venueId: data.venue_id,
+    status: data.status,
+    createdAt: data.created_at,
+    checkedIn: data.checked_in || false,
+    userName: data.user_name || ''
   } as Booking;
 };
 
@@ -170,23 +166,31 @@ export const cancelBooking = async (bookingId: string) => {
   // First check if the booking belongs to the user or if user is admin
   const isAdmin = userData.user.user_metadata?.role === 'admin';
   
-  if (!isAdmin) {
-    // If not admin, verify the booking belongs to the user
-    const { data: bookingData, error: bookingError } = await supabase
-      .from("bookings")
-      .select("user_id")
-      .eq("id", bookingId)
-      .single();
-    
-    if (bookingError || !bookingData || bookingData.user_id !== userData.user.id) {
-      throw new Error("You can only cancel your own bookings");
-    }
-  }
-
-  const { error } = await supabase
+  // Get the booking details to check if the slot is in the future
+  const { data: bookingData, error: bookingError } = await supabase
     .from("bookings")
-    .delete()
-    .eq("id", bookingId);
+    .select("*, slots:slot_id(date)")
+    .eq("id", bookingId)
+    .single();
+    
+  if (bookingError || !bookingData) {
+    throw new Error("Booking not found");
+  }
+  
+  if (!isAdmin && bookingData.user_id !== userData.user.id) {
+    throw new Error("You can only cancel your own bookings");
+  }
+  
+  // Check if the slot is in the future to determine if we should refund the coin
+  const slotDate = parseISO(bookingData.slots.date);
+  const currentDate = startOfDay(new Date());
+  const shouldRefundCoin = isAfter(slotDate, currentDate) || slotDate.toDateString() === currentDate.toDateString();
+
+  // Call the function to cancel booking and possibly refund coin
+  const { error } = await supabase.rpc('cancel_booking_with_refund', {
+    booking_id_param: bookingId,
+    refund_coin: shouldRefundCoin
+  });
   
   if (error) {
     throw error;

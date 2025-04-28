@@ -7,13 +7,14 @@ import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BackButton from "@/components/navigation/BackButton";
-import { Calendar, Clock, MapPin, Check, X } from "lucide-react";
+import { Calendar, Clock, MapPin, Check, X, Coins } from "lucide-react";
 import { BookingWithDetails } from "@/models/types";
 import { useAuth } from "@/context/AuthContext";
 import { getUserBookings, cancelBooking } from "@/services/userBookingService";
 import { updateBookingCheckInStatus } from "@/services/checkInService";
 import { Badge } from "@/components/ui/badge";
 import { isAfter, parseISO, startOfDay } from "date-fns";
+import { getAdminSettings } from "@/services/adminSettingsService";
 
 const MyBookings = () => {
   const navigate = useNavigate();
@@ -22,6 +23,8 @@ const MyBookings = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
+  const [showCoins, setShowCoins] = useState(false);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
   useEffect(() => {
     if (!isLoadingAuth) {
@@ -32,8 +35,29 @@ const MyBookings = () => {
       }
 
       loadBookings();
+      checkVenueSettings();
     }
   }, [user, isLoadingAuth, navigate]);
+
+  const checkVenueSettings = async () => {
+    setIsLoadingSettings(true);
+    // Use the venues from user's preferred venues if available
+    if (user?.preferredVenues?.length) {
+      try {
+        // Check settings for the first preferred venue
+        const settings = await getAdminSettings(user.preferredVenues[0]);
+        setShowCoins(!settings?.allow_booking_without_coins);
+      } catch (error) {
+        console.error("Error checking venue settings:", error);
+        // Default to showing coins if we can't determine settings
+        setShowCoins(true);
+      }
+    } else {
+      // Default to showing coins if no preferred venues
+      setShowCoins(true);
+    }
+    setIsLoadingSettings(false);
+  };
 
   const loadBookings = async () => {
     setIsLoading(true);
@@ -114,7 +138,15 @@ const MyBookings = () => {
         <div className="container mx-auto">
           <div className="mb-6">
             <BackButton to="/" />
-            <h1 className="text-3xl font-bold text-gray-900 mt-4">My Bookings</h1>
+            <div className="flex justify-between items-center mt-4">
+              <h1 className="text-3xl font-bold text-gray-900">My Bookings</h1>
+              {showCoins && !isLoadingSettings && (
+                <div className="flex items-center bg-white px-4 py-2 rounded-full border shadow-sm">
+                  <Coins className="h-5 w-5 text-yellow-500 mr-2" />
+                  <span className="font-medium">{user?.slotCoins || 0} Coins</span>
+                </div>
+              )}
+            </div>
             <p className="text-gray-600 mt-2">
               View and manage your upcoming pickleball games
             </p>
