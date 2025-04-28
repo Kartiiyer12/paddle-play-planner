@@ -42,13 +42,7 @@ const Profile = () => {
 
   const handleProfileSaved = () => {
     toast.success("Profile updated successfully");
-    
-    // If this was a new user completing their profile for the first time
-    const isNewUser = sessionStorage.getItem('newUser');
-    if (isNewUser) {
-      sessionStorage.removeItem('newUser');
-      navigate("/my-bookings");
-    }
+    navigate("/my-bookings");
   };
 
   if (isLoadingAuth || isLoading) {
