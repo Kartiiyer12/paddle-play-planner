@@ -130,21 +130,7 @@ export const bookSlot = async (slotId: string, venueId: string) => {
   }
 
   // Call the stored procedure to book the slot and handle coin deduction
-  const { data, error } = await supabase.rpc<{
-    slot_id_param: string;
-    venue_id_param: string;
-    allow_booking_without_coins_param: boolean;
-    user_name_param: string | null;
-  }, {
-    id: string;
-    user_id: string;
-    slot_id: string;
-    venue_id: string;
-    status: string;
-    created_at: string;
-    checked_in: boolean | null;
-    user_name: string | null;
-  }>('book_slot_with_coin', {
+  const { data, error } = await supabase.rpc('book_slot_with_coin', {
     slot_id_param: slotId,
     venue_id_param: venueId,
     allow_booking_without_coins_param: allowBookingWithoutCoins,
@@ -160,15 +146,27 @@ export const bookSlot = async (slotId: string, venueId: string) => {
     throw new Error("Failed to book slot: No data returned");
   }
   
+  // Type assertion to access properties safely
+  const bookingData = data as {
+    id: string;
+    user_id: string;
+    slot_id: string;
+    venue_id: string;
+    status: string;
+    created_at: string;
+    checked_in: boolean | null;
+    user_name: string | null;
+  };
+  
   return {
-    id: data.id,
-    userId: data.user_id,
-    slotId: data.slot_id,
-    venueId: data.venue_id,
-    status: data.status,
-    createdAt: data.created_at,
-    checkedIn: data.checked_in || false,
-    userName: data.user_name || ''
+    id: bookingData.id,
+    userId: bookingData.user_id,
+    slotId: bookingData.slot_id,
+    venueId: bookingData.venue_id,
+    status: bookingData.status,
+    createdAt: bookingData.created_at,
+    checkedIn: bookingData.checked_in || false,
+    userName: bookingData.user_name || ''
   } as Booking;
 };
 
@@ -206,10 +204,7 @@ export const cancelBooking = async (bookingId: string) => {
   const shouldRefundCoin = isAfter(slotDate, currentDate) || slotDate.toDateString() === currentDate.toDateString();
 
   // Call the function to cancel booking and possibly refund coin
-  const { error } = await supabase.rpc<{
-    booking_id_param: string;
-    refund_coin: boolean;
-  }, boolean>('cancel_booking_with_refund', {
+  const { data, error } = await supabase.rpc('cancel_booking_with_refund', {
     booking_id_param: bookingId,
     refund_coin: shouldRefundCoin
   });
