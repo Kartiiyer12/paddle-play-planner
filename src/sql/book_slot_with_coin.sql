@@ -15,6 +15,7 @@ DECLARE
   v_slot_coins INT;
   v_booking_id UUID;
   v_result RECORD;
+  v_venue_settings RECORD;
 BEGIN
   -- Get the current user ID
   v_user_id := auth.uid();
@@ -28,6 +29,17 @@ BEGIN
   SELECT slot_coins INTO v_slot_coins
   FROM public.profiles
   WHERE id = v_user_id;
+  
+  -- Get venue settings
+  SELECT allow_booking_without_coins INTO v_venue_settings
+  FROM public.admin_settings
+  WHERE venue_id = venue_id_param
+  LIMIT 1;
+  
+  -- Use venue settings if available, otherwise use the parameter
+  IF v_venue_settings IS NOT NULL THEN
+    allow_booking_without_coins_param := v_venue_settings.allow_booking_without_coins;
+  END IF;
   
   -- Check if user has enough coins or if booking without coins is allowed
   IF v_slot_coins <= 0 AND NOT allow_booking_without_coins_param THEN
