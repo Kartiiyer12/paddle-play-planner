@@ -263,7 +263,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      book_slot_with_coin: {
+        Args: {
+          slot_id_param: string
+          venue_id_param: string
+          allow_booking_without_coins_param: boolean
+          user_name_param: string
+        }
+        Returns: Json
+      }
+      cancel_booking_with_refund: {
+        Args: { booking_id_param: string; refund_coin: boolean }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
