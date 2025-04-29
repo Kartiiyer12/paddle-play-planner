@@ -14,6 +14,7 @@ DECLARE
   v_slot_id UUID;
   v_venue_id UUID;
   v_allow_booking_without_coins BOOLEAN;
+  v_booking_was_made_with_coin BOOLEAN;
 BEGIN
   -- Get the current user ID
   v_user_id := auth.uid();
@@ -50,17 +51,21 @@ BEGIN
   WHERE venue_id = v_venue_id
   LIMIT 1;
   
-  -- Default to false if no settings found
+  -- Default to false if no settings found (requiring coins)
   IF v_allow_booking_without_coins IS NULL THEN
     v_allow_booking_without_coins := false;
   END IF;
+  
+  -- Determine if the booking was made with a coin (when coins were required)
+  v_booking_was_made_with_coin := NOT v_allow_booking_without_coins;
   
   -- Delete the booking
   DELETE FROM public.bookings
   WHERE id = booking_id_param;
   
   -- Refund coin if needed and if we should refund
-  IF refund_coin AND NOT v_allow_booking_without_coins THEN
+  -- Only refund if the booking was originally made with a coin and refund is requested
+  IF refund_coin AND v_booking_was_made_with_coin THEN
     UPDATE public.profiles
     SET slot_coins = slot_coins + 1
     WHERE id = v_booking_user_id;

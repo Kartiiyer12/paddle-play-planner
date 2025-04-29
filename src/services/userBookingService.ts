@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Booking, BookingWithDetails } from "@/models/types";
 import { isAfter, parseISO, startOfDay } from "date-fns";
@@ -205,7 +204,7 @@ export const cancelBooking = async (bookingId: string) => {
     throw new Error("You can only cancel your own bookings");
   }
   
-  // Check if the slot is in the future to determine if we should refund the coin
+  // Check if the slot is in the future or today to determine if we should refund the coin
   const slotDate = parseISO(bookingData.slots.date);
   const currentDate = startOfDay(new Date());
   const shouldRefundCoin = isAfter(slotDate, currentDate) || slotDate.toDateString() === currentDate.toDateString();
