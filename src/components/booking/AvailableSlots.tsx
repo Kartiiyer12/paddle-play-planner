@@ -84,6 +84,7 @@ const AvailableSlots = ({
                   canBook={allowBookingWithoutCoins || userSlotCoins > 0}
                   isBooked={userBookedSlotIds.includes(slot.id)}
                   userSlotCoins={userSlotCoins}
+                  allowBookingWithoutCoins={allowBookingWithoutCoins}
                 />
               ))}
             </div>

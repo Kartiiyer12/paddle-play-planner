@@ -15,6 +15,7 @@ import { updateBookingCheckInStatus } from "@/services/checkInService";
 import { Badge } from "@/components/ui/badge";
 import { isAfter, parseISO, startOfDay } from "date-fns";
 import { getAdminSettings } from "@/services/adminSettingsService";
+import { getProfile } from "@/services/profileService";
 
 const MyBookings = () => {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ const MyBookings = () => {
   const [isCancelling, setIsCancelling] = useState(false);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [showCoins, setShowCoins] = useState(false);
+  const [userSlotCoins, setUserSlotCoins] = useState(0);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
   useEffect(() => {
@@ -35,9 +37,23 @@ const MyBookings = () => {
       }
 
       loadBookings();
-      checkVenueSettings();
+      loadUserProfile();
     }
   }, [user, isLoadingAuth, navigate]);
+
+  const loadUserProfile = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const profileData = await getProfile(user.id);
+      if (profileData) {
+        setUserSlotCoins(profileData.slot_coins || 0);
+      }
+    } catch (error) {
+      console.error("Error loading user profile:", error);
+      setUserSlotCoins(0);
+    }
+  };
 
   const checkVenueSettings = async () => {
     setIsLoadingSettings(true);
@@ -73,8 +89,25 @@ const MyBookings = () => {
       
       futureBookings.sort((a, b) => new Date(a.slot.date).getTime() - new Date(b.slot.date).getTime());
       setBookings(futureBookings);
+      
+      // Check venue settings after loading bookings
+      if (futureBookings.length > 0) {
+        const firstVenueId = futureBookings[0].venueId;
+        try {
+          const settings = await getAdminSettings(firstVenueId);
+          setShowCoins(!settings?.allow_booking_without_coins);
+          setIsLoadingSettings(false);
+        } catch (error) {
+          console.error("Error checking venue settings:", error);
+          await checkVenueSettings(); // Fallback to user preferred venues
+        }
+      } else {
+        await checkVenueSettings();
+      }
     } catch (error) {
       toast.error("Failed to load bookings");
+      setIsLoading(false);
+      setIsLoadingSettings(false);
     } finally {
       setIsLoading(false);
     }
@@ -87,6 +120,7 @@ const MyBookings = () => {
       toast.success("Booking cancelled successfully!");
       
       await loadBookings();
+      await loadUserProfile(); // Refresh coins in case of refund
     } catch (error: any) {
       toast.error(error.message || "Failed to cancel booking");
     } finally {
@@ -143,7 +177,7 @@ const MyBookings = () => {
               {showCoins && !isLoadingSettings && (
                 <div className="flex items-center bg-white px-4 py-2 rounded-full border shadow-sm">
                   <Coins className="h-5 w-5 text-yellow-500 mr-2" />
-                  <span className="font-medium">{user?.slotCoins || 0} Coins</span>
+                  <span className="font-medium">{userSlotCoins} Coins</span>
                 </div>
               )}
             </div>

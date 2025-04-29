@@ -13,6 +13,8 @@ import VenueSelector from "@/components/booking/VenueSelector";
 import AvailableSlots from "@/components/booking/AvailableSlots";
 import { add, format } from "date-fns";
 import { getAdminSettings } from "@/services/adminSettingsService";
+import { Coins } from "lucide-react";
+import { getProfile } from "@/services/profileService";
 
 const BookSlot = () => {
   const navigate = useNavigate();
@@ -25,6 +27,7 @@ const BookSlot = () => {
   const [isBooking, setIsBooking] = useState(false);
   const [userBookedSlotIds, setUserBookedSlotIds] = useState<string[]>([]);
   const [allowBookingWithoutCoins, setAllowBookingWithoutCoins] = useState(false);
+  const [userSlotCoins, setUserSlotCoins] = useState(0);
   
   useEffect(() => {
     if (!isLoadingAuth) {
@@ -39,10 +42,24 @@ const BookSlot = () => {
   }, [user, isLoadingAuth, navigate]);
 
   useEffect(() => {
-    if (selectedVenue) {
+    if (selectedVenue && user?.id) {
       loadAdminSettings();
+      loadUserProfile();
     }
-  }, [selectedVenue]);
+  }, [selectedVenue, user?.id]);
+
+  const loadUserProfile = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const profileData = await getProfile(user.id);
+      if (profileData) {
+        setUserSlotCoins(profileData.slot_coins || 0);
+      }
+    } catch (error) {
+      console.error("Error loading user profile:", error);
+    }
+  };
 
   const loadAdminSettings = async () => {
     if (selectedVenue) {
@@ -77,6 +94,9 @@ const BookSlot = () => {
       if (user?.preferredVenues?.length) {
         setSelectedVenue(user.preferredVenues[0]);
       }
+
+      // Load user profile to get slot coins
+      await loadUserProfile();
 
       // Load slots for next 7 days
       await loadSlotsForNext7Days();
@@ -118,6 +138,12 @@ const BookSlot = () => {
       return;
     }
 
+    // Check if booking is allowed based on coins
+    if (!allowBookingWithoutCoins && userSlotCoins <= 0) {
+      toast.error("Not enough coins to book this slot");
+      return;
+    }
+
     setIsBooking(true);
     try {
       await bookSlot(slotId, venueId);
@@ -130,14 +156,15 @@ const BookSlot = () => {
       // Update available slots
       await loadSlotsForNext7Days();
       
+      // Refresh user profile to get updated coin count
+      await loadUserProfile();
+      
     } catch (error: any) {
       toast.error(error.message || "Failed to book slot");
     } finally {
       setIsBooking(false);
     }
   };
-
-  const canBookWithCoins = (user?.slotCoins || 0) > 0 || allowBookingWithoutCoins;
 
   if (isLoadingAuth || (isLoading && !availableSlots.length)) {
     return (
@@ -153,7 +180,17 @@ const BookSlot = () => {
 
       <div className="flex-grow pt-24 pb-16 px-4 bg-gray-50">
         <div className="container mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Book a Slot</h1>
+          <div className="flex justify-between items-center mb-2">
+            <h1 className="text-3xl font-bold text-gray-900">Book a Slot</h1>
+            
+            {!allowBookingWithoutCoins && (
+              <div className="flex items-center bg-white px-4 py-2 rounded-full border shadow-sm">
+                <Coins className="h-5 w-5 text-yellow-500 mr-2" />
+                <span className="font-medium">{userSlotCoins} Coins</span>
+              </div>
+            )}
+          </div>
+          
           <p className="text-gray-600 mb-8">
             Find and book available pickleball sessions
           </p>
@@ -180,7 +217,7 @@ const BookSlot = () => {
               onBookSlot={handleBookSlot}
               isBooking={isBooking}
               userBookedSlotIds={userBookedSlotIds}
-              userSlotCoins={user?.slotCoins || 0}
+              userSlotCoins={userSlotCoins}
               allowBookingWithoutCoins={allowBookingWithoutCoins}
             />
           </div>

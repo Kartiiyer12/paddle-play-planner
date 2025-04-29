@@ -130,7 +130,12 @@ export const bookSlot = async (slotId: string, venueId: string) => {
   }
 
   // Call the stored procedure to book the slot and handle coin deduction
-  const { data, error } = await supabase.rpc<any, {
+  const { data, error } = await supabase.rpc<{
+    slot_id_param: string;
+    venue_id_param: string;
+    allow_booking_without_coins_param: boolean;
+    user_name_param: string | null;
+  }, {
     id: string;
     user_id: string;
     slot_id: string;
@@ -201,7 +206,10 @@ export const cancelBooking = async (bookingId: string) => {
   const shouldRefundCoin = isAfter(slotDate, currentDate) || slotDate.toDateString() === currentDate.toDateString();
 
   // Call the function to cancel booking and possibly refund coin
-  const { error } = await supabase.rpc<any, boolean>('cancel_booking_with_refund', {
+  const { error } = await supabase.rpc<{
+    booking_id_param: string;
+    refund_coin: boolean;
+  }, boolean>('cancel_booking_with_refund', {
     booking_id_param: bookingId,
     refund_coin: shouldRefundCoin
   });

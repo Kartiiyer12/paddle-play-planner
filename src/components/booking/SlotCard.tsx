@@ -14,6 +14,7 @@ interface SlotCardProps {
   canBook: boolean;
   isBooked: boolean;
   userSlotCoins?: number;
+  allowBookingWithoutCoins?: boolean;
 }
 
 const SlotCard = ({ 
@@ -23,7 +24,8 @@ const SlotCard = ({
   isBooking,
   canBook,
   isBooked,
-  userSlotCoins = 0
+  userSlotCoins = 0,
+  allowBookingWithoutCoins = false
 }: SlotCardProps) => {
   
   // Format times for display
@@ -35,7 +37,12 @@ const SlotCard = ({
   
   // Check if slot is full
   const isFull = availableSpots <= 0;
-  const hasNoCoins = userSlotCoins <= 0 && !canBook;
+  
+  // Check if user has enough coins when needed
+  const hasNoCoins = !allowBookingWithoutCoins && userSlotCoins <= 0;
+  
+  // Determine if booking is allowed
+  const canBookSlot = canBook && !isFull && !isBooked && (allowBookingWithoutCoins || userSlotCoins > 0);
   
   return (
     <div className={`border rounded-lg overflow-hidden ${isFull ? 'bg-gray-50' : 'bg-white'}`}>
@@ -89,11 +96,11 @@ const SlotCard = ({
                   <Button
                     onClick={() => onBookSlot(slot.id, slot.venueId)}
                     className={`w-full ${
-                      isFull || !canBook || isBooked ? 
-                      "bg-gray-400 hover:bg-gray-400 cursor-not-allowed" : 
-                      "bg-pickleball-purple hover:bg-pickleball-purple/90"
+                      canBookSlot ? 
+                      "bg-pickleball-purple hover:bg-pickleball-purple/90" : 
+                      "bg-gray-400 hover:bg-gray-400 cursor-not-allowed"
                     }`}
-                    disabled={isBooking || isFull || !canBook || isBooked}
+                    disabled={isBooking || !canBookSlot}
                   >
                     {isBooked ? "Already Booked" : 
                       isFull ? "Fully Booked" : 
