@@ -107,7 +107,31 @@ export const getProfile = async (userId: string) => {
   }
 };
 
+// Add a new function to specifically fetch user's slot coins
+export const getUserSlotCoins = async (userId: string): Promise<number> => {
+  try {
+    console.log("Getting slot coins for user:", userId);
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("slot_coins")
+      .eq("id", userId)
+      .single();
+    
+    if (error) {
+      console.error("Error fetching slot coins:", error);
+      return 0;
+    }
+    
+    console.log("User slot coins:", data?.slot_coins);
+    return data?.slot_coins || 0;
+  } catch (error) {
+    console.error("Error getting user slot coins:", error);
+    return 0;
+  }
+};
+
 export const profileService = {
   updateProfile,
-  getProfile
+  getProfile,
+  getUserSlotCoins
 };

@@ -3,3 +3,4 @@
 export * from "./userBookingService";
 export * from "./adminBookingService";
 export * from "./checkInService";
+export { getUserSlotCoins } from "./profileService";

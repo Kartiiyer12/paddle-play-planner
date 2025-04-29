@@ -15,7 +15,7 @@ import { updateBookingCheckInStatus } from "@/services/checkInService";
 import { Badge } from "@/components/ui/badge";
 import { isAfter, parseISO, startOfDay } from "date-fns";
 import { getAdminSettings } from "@/services/adminSettingsService";
-import { getProfile } from "@/services/profileService";
+import { getUserSlotCoins } from "@/services/profileService";
 
 const MyBookings = () => {
   const navigate = useNavigate();
@@ -37,20 +37,19 @@ const MyBookings = () => {
       }
 
       loadBookings();
-      loadUserProfile();
+      loadUserCoins();
     }
   }, [user, isLoadingAuth, navigate]);
 
-  const loadUserProfile = async () => {
+  const loadUserCoins = async () => {
     if (!user?.id) return;
     
     try {
-      const profileData = await getProfile(user.id);
-      if (profileData) {
-        setUserSlotCoins(profileData.slot_coins || 0);
-      }
+      // Use the dedicated function to fetch slot coins
+      const coins = await getUserSlotCoins(user.id);
+      setUserSlotCoins(coins);
     } catch (error) {
-      console.error("Error loading user profile:", error);
+      console.error("Error loading user coins:", error);
       setUserSlotCoins(0);
     }
   };
@@ -120,7 +119,7 @@ const MyBookings = () => {
       toast.success("Booking cancelled successfully!");
       
       await loadBookings();
-      await loadUserProfile(); // Refresh coins in case of refund
+      await loadUserCoins(); // Refresh coins in case of refund
     } catch (error: any) {
       toast.error(error.message || "Failed to cancel booking");
     } finally {

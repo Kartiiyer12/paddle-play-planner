@@ -14,7 +14,7 @@ import AvailableSlots from "@/components/booking/AvailableSlots";
 import { add, format } from "date-fns";
 import { getAdminSettings } from "@/services/adminSettingsService";
 import { Coins } from "lucide-react";
-import { getProfile } from "@/services/profileService";
+import { getUserSlotCoins } from "@/services/profileService";
 
 const BookSlot = () => {
   const navigate = useNavigate();
@@ -44,20 +44,20 @@ const BookSlot = () => {
   useEffect(() => {
     if (selectedVenue && user?.id) {
       loadAdminSettings();
-      loadUserProfile();
+      loadUserCoins();
     }
   }, [selectedVenue, user?.id]);
 
-  const loadUserProfile = async () => {
+  const loadUserCoins = async () => {
     if (!user?.id) return;
     
     try {
-      const profileData = await getProfile(user.id);
-      if (profileData) {
-        setUserSlotCoins(profileData.slot_coins || 0);
-      }
+      // Use the dedicated function to fetch slot coins
+      const coins = await getUserSlotCoins(user.id);
+      setUserSlotCoins(coins);
     } catch (error) {
-      console.error("Error loading user profile:", error);
+      console.error("Error loading user coins:", error);
+      setUserSlotCoins(0);
     }
   };
 
@@ -95,8 +95,8 @@ const BookSlot = () => {
         setSelectedVenue(user.preferredVenues[0]);
       }
 
-      // Load user profile to get slot coins
-      await loadUserProfile();
+      // Load user coins
+      await loadUserCoins();
 
       // Load slots for next 7 days
       await loadSlotsForNext7Days();
@@ -156,8 +156,8 @@ const BookSlot = () => {
       // Update available slots
       await loadSlotsForNext7Days();
       
-      // Refresh user profile to get updated coin count
-      await loadUserProfile();
+      // Refresh user coins after booking
+      await loadUserCoins();
       
     } catch (error: any) {
       toast.error(error.message || "Failed to book slot");
