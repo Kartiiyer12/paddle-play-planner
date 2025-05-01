@@ -65,11 +65,12 @@ const LandingPage = () => {
             </div>
             <div className="md:w-1/2 flex justify-center">
               <img 
-                src="https://images.unsplash.com/photo-1608245449230-4ac19066d2d0?q=80&w=1074&auto=format&fit=crop" 
-                alt="Pickleball players" 
-                className="rounded-lg shadow-xl max-w-full h-auto animate-bounce-slow"
-                style={{ maxHeight: "400px" }}
-              />
+                  src="/front.jpeg" 
+                  alt="Pickleball players" 
+                  className="rounded-lg shadow-xl max-w-full h-auto animate-bounce-slow"
+                  style={{ maxHeight: "400px" }}
+             />
+
             </div>
           </div>
         </div>
