@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { getAdminSettings, upsertAdminSettings, AdminSettings } from "@/services/adminSettingsService";
 import { useVenues } from "@/hooks/useVenues";
@@ -36,6 +35,6 @@ export const useAdminSettings = () => {
     settings,
     isLoading,
     updateSettings,
-    allowBookingWithoutCoins: settings?.allow_booking_without_coins || false
+    allowBookingWithoutCoins: settings?.allow_booking_without_coins ?? true
   };
 };

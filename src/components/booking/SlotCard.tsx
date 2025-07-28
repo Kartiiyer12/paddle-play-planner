@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Slot } from "@/models/types";
 import { format } from "date-fns";
@@ -44,6 +43,13 @@ const SlotCard = ({
   // Determine if booking is allowed
   const canBookSlot = canBook && !isFull && !isBooked && (allowBookingWithoutCoins || userSlotCoins > 0);
   
+  // Determine button label
+  let buttonLabel = "Book Slot";
+  if (isBooked) buttonLabel = "Already Booked";
+  else if (isFull) buttonLabel = "Fully Booked";
+  else if (isBooking) buttonLabel = "Booking...";
+  else if (hasNoCoins) buttonLabel = "Not Enough Coins";
+  
   return (
     <div className={`border rounded-lg overflow-hidden ${isFull ? 'bg-gray-50' : 'bg-white'}`}>
       <div className="p-4">
@@ -80,6 +86,7 @@ const SlotCard = ({
             </span>
           </div>
           
+          {/* Only show 'No coins available' if booking without coins is NOT allowed */}
           {hasNoCoins && (
             <div className="flex items-center text-sm text-red-600">
               <Coins className="h-4 w-4 mr-2" />
@@ -102,13 +109,11 @@ const SlotCard = ({
                     }`}
                     disabled={isBooking || !canBookSlot}
                   >
-                    {isBooked ? "Already Booked" : 
-                      isFull ? "Fully Booked" : 
-                      hasNoCoins ? "Not Enough Coins" :
-                      isBooking ? "Booking..." : "Book Slot"}
+                    {buttonLabel}
                   </Button>
                 </div>
               </TooltipTrigger>
+              {/* Only show tooltip if booking without coins is NOT allowed and user has no coins */}
               {hasNoCoins && (
                 <TooltipContent>
                   <p>You need at least 1 coin to book a slot</p>

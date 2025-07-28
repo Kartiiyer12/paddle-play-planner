@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import BookingWithoutCoinsToggle from "./BookingWithoutCoinsToggle";
 
 const SettingsPanel = () => {
-  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [emailNotifications, setEmailNotifications] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [autoLogout, setAutoLogout] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
