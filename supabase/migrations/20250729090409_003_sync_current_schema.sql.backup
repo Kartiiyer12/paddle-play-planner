@@ -9,15 +9,15 @@ drop trigger if exists "update_slots_updated_at" on "public"."slots";
 
 drop trigger if exists "update_venues_updated_at" on "public"."venues";
 
-alter table "public"."bookings" drop constraint "bookings_user_id_fkey";
+alter table "public"."bookings" drop constraint if exists "bookings_user_id_fkey";
 
-alter table "public"."slots" drop constraint "valid_max_players";
+alter table "public"."slots" drop constraint if exists "valid_max_players";
 
-alter table "public"."slots" drop constraint "valid_price";
+alter table "public"."slots" drop constraint if exists "valid_price";
 
-alter table "public"."slots" drop constraint "valid_time_range";
+alter table "public"."slots" drop constraint if exists "valid_time_range";
 
-alter table "public"."venues" drop constraint "venues_admin_id_fkey";
+alter table "public"."venues" drop constraint if exists "venues_admin_id_fkey";
 
 drop index if exists "public"."idx_bookings_slot_id";
 
@@ -29,7 +29,7 @@ drop index if exists "public"."idx_slots_start_time";
 
 drop index if exists "public"."idx_slots_venue_id";
 
-create table "public"."admin_settings" (
+create table if not exists "public"."admin_settings" (
     "id" uuid not null default gen_random_uuid(),
     "venue_id" uuid not null,
     "admin_id" uuid not null,
@@ -41,7 +41,7 @@ create table "public"."admin_settings" (
 
 alter table "public"."admin_settings" enable row level security;
 
-create table "public"."payment_configs" (
+create table if not exists "public"."payment_configs" (
     "id" uuid not null default gen_random_uuid(),
     "slot_count" integer not null,
     "amount" numeric(10,2) not null,
@@ -55,9 +55,9 @@ alter table "public"."payment_configs" enable row level security;
 
 alter table "public"."bookings" drop column "updated_at";
 
-alter table "public"."bookings" add column "checked_in" boolean default false;
+alter table "public"."bookings" add column if not exists "checked_in" boolean default false;
 
-alter table "public"."bookings" add column "user_name" text;
+alter table "public"."bookings" add column if not exists "user_name" text;
 
 alter table "public"."bookings" alter column "created_at" set not null;
 
@@ -75,13 +75,13 @@ alter table "public"."profiles" add column "sex" text;
 
 alter table "public"."profiles" add column "skill_level" text;
 
-alter table "public"."profiles" add column "slot_coins" integer default 0;
+alter table "public"."profiles" add column if not exists "slot_coins" integer default 0;
 
 alter table "public"."slots" drop column "price";
 
 alter table "public"."slots" drop column "status";
 
-alter table "public"."slots" add column "current_players" integer not null default 0;
+alter table "public"."slots" add column if not exists "current_players" integer not null default 0;
 
 alter table "public"."slots" add column "date" date not null;
 
@@ -115,7 +115,7 @@ alter table "public"."venues" drop column "phone";
 
 alter table "public"."venues" drop column "zip_code";
 
-alter table "public"."venues" add column "court_count" integer not null default 1;
+alter table "public"."venues" add column if not exists "court_count" integer not null default 1;
 
 alter table "public"."venues" add column "description" text;
 

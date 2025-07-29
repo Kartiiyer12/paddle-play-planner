@@ -13,8 +13,7 @@ DECLARE
   v_booking_user_id UUID;
   v_slot_id UUID;
   v_venue_id UUID;
-  v_allow_booking_without_coins BOOLEAN;
-  v_booking_was_made_with_coin BOOLEAN;
+  v_booking_used_coin BOOLEAN;
 BEGIN
   -- Get the current user ID
   v_user_id := auth.uid();
@@ -24,9 +23,9 @@ BEGIN
     RAISE EXCEPTION 'User not authenticated';
   END IF;
   
-  -- Check if the booking exists and belongs to the user
-  SELECT user_id, slot_id, venue_id 
-  INTO v_booking_user_id, v_slot_id, v_venue_id
+  -- Check if the booking exists and get its details including coin usage
+  SELECT user_id, slot_id, venue_id, used_coin
+  INTO v_booking_user_id, v_slot_id, v_venue_id, v_booking_used_coin
   FROM public.bookings
   WHERE id = booking_id_param;
   
@@ -44,31 +43,21 @@ BEGIN
     RAISE EXCEPTION 'You can only cancel your own bookings';
   END IF;
   
-  -- Check if booking was made with a coin
-  SELECT allow_booking_without_coins 
-  INTO v_allow_booking_without_coins
-  FROM public.admin_settings
-  WHERE venue_id = v_venue_id
-  LIMIT 1;
-  
-  -- Default to false if no settings found (requiring coins)
-  IF v_allow_booking_without_coins IS NULL THEN
-    v_allow_booking_without_coins := false;
+  -- For legacy bookings without used_coin data, assume no coin was used
+  -- This is safer than risking negative balances
+  IF v_booking_used_coin IS NULL THEN
+    v_booking_used_coin := false;
   END IF;
-  
-  -- Determine if the booking was made with a coin (when coins were required)
-  v_booking_was_made_with_coin := NOT v_allow_booking_without_coins;
   
   -- Delete the booking
   DELETE FROM public.bookings
   WHERE id = booking_id_param;
   
   -- Refund coin if needed and if we should refund
-  -- Only refund if the booking was originally made with a coin and refund is requested
-  IF refund_coin AND v_booking_was_made_with_coin THEN
-    UPDATE public.profiles
-    SET slot_coins = slot_coins + 1
-    WHERE id = v_booking_user_id;
+  -- Only refund if the booking actually used a coin and refund is requested
+  IF refund_coin AND v_booking_used_coin THEN
+    -- Use safe coin balance function to prevent race conditions
+    PERFORM safe_update_coin_balance(v_booking_user_id, 1, 'refund');
   END IF;
   
   RETURN true;

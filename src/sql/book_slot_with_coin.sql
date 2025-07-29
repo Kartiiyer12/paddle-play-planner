@@ -9,6 +9,7 @@ CREATE OR REPLACE FUNCTION public.book_slot_with_coin(
 RETURNS JSON
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   v_user_id UUID;
@@ -16,6 +17,7 @@ DECLARE
   v_booking_id UUID;
   v_result RECORD;
   v_venue_settings RECORD;
+  v_will_use_coin BOOLEAN;
 BEGIN
   -- Get the current user ID
   v_user_id := auth.uid();
@@ -23,6 +25,27 @@ BEGIN
   -- Check if user exists
   IF v_user_id IS NULL THEN
     RAISE EXCEPTION 'User not authenticated';
+  END IF;
+  
+  -- Validate input parameters
+  IF slot_id_param IS NULL OR venue_id_param IS NULL THEN
+    RAISE EXCEPTION 'Slot ID and Venue ID are required';
+  END IF;
+  
+  -- Check if slot exists and belongs to the venue
+  IF NOT EXISTS (
+    SELECT 1 FROM public.slots 
+    WHERE id = slot_id_param AND venue_id = venue_id_param
+  ) THEN
+    RAISE EXCEPTION 'Invalid slot or venue combination';
+  END IF;
+  
+  -- Check if user already has a booking for this slot
+  IF EXISTS (
+    SELECT 1 FROM public.bookings 
+    WHERE user_id = v_user_id AND slot_id = slot_id_param AND status = 'confirmed'
+  ) THEN
+    RAISE EXCEPTION 'User already has a booking for this slot';
   END IF;
 
   -- Get the user's slot coins
@@ -46,14 +69,19 @@ BEGIN
     RAISE EXCEPTION 'Not enough coins to book this slot';
   END IF;
   
-  -- Create the booking
+  -- Determine if we will actually use a coin for this booking
+  -- We use a coin only when: setting is OFF (coins required) AND user has coins
+  v_will_use_coin := NOT allow_booking_without_coins_param AND v_slot_coins > 0;
+  
+  -- Create the booking with coin usage tracking
   INSERT INTO public.bookings (
     user_id,
     slot_id,
     venue_id,
     status,
     user_name,
-    checked_in
+    checked_in,
+    used_coin
   )
   VALUES (
     v_user_id,
@@ -61,15 +89,15 @@ BEGIN
     venue_id_param,
     'confirmed',
     user_name_param,
-    false
+    false,
+    v_will_use_coin
   )
   RETURNING id INTO v_booking_id;
   
-  -- Deduct coin if needed (when not allowing booking without coins)
-  IF NOT allow_booking_without_coins_param AND v_slot_coins > 0 THEN
-    UPDATE public.profiles
-    SET slot_coins = slot_coins - 1
-    WHERE id = v_user_id;
+  -- Deduct coin if we determined we should use one
+  IF v_will_use_coin THEN
+    -- Use safe coin balance function to prevent race conditions and negative balances
+    PERFORM safe_update_coin_balance(v_user_id, -1, 'deduct');
   END IF;
   
   -- Return the booking details

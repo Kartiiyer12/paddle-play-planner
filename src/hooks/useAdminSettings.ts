@@ -35,6 +35,6 @@ export const useAdminSettings = () => {
     settings,
     isLoading,
     updateSettings,
-    allowBookingWithoutCoins: settings?.allow_booking_without_coins ?? true
+    allowBookingWithoutCoins: settings?.allow_booking_without_coins ?? false
   };
 };

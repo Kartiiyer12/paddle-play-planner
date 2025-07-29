@@ -1,4 +1,3 @@
-
 export type Json =
   | string
   | number
@@ -82,6 +81,7 @@ export type Database = {
           id: string
           slot_id: string
           status: string
+          used_coin: boolean | null
           user_id: string
           user_name: string | null
           venue_id: string
@@ -92,6 +92,7 @@ export type Database = {
           id?: string
           slot_id: string
           status: string
+          used_coin?: boolean | null
           user_id: string
           user_name?: string | null
           venue_id: string
@@ -102,6 +103,7 @@ export type Database = {
           id?: string
           slot_id?: string
           status?: string
+          used_coin?: boolean | null
           user_id?: string
           user_name?: string | null
           venue_id?: string
@@ -119,6 +121,50 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coin_transactions: {
+        Row: {
+          amount: number
+          balance_after: number
+          balance_before: number
+          booking_id: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          balance_before: number
+          booking_id?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          balance_before?: number
+          booking_id?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coin_transactions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
             referencedColumns: ["id"]
           },
         ]
@@ -306,6 +352,14 @@ export type Database = {
       cancel_booking_with_refund: {
         Args: { booking_id_param: string; refund_coin: boolean }
         Returns: boolean
+      }
+      safe_update_coin_balance: {
+        Args: {
+          user_id_param: string
+          amount_change: number
+          transaction_type?: string
+        }
+        Returns: number
       }
     }
     Enums: {
