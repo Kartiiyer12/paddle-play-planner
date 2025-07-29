@@ -2,12 +2,6 @@
 -- Initial Schema Creation
 -- =============================================
 
--- Enable Row Level Security
-ALTER TABLE public.venues ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.slots ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-
 -- =============================================
 -- Create 'profiles' table
 -- =============================================
@@ -110,4 +104,12 @@ CREATE TRIGGER update_slots_updated_at
 CREATE TRIGGER update_bookings_updated_at
     BEFORE UPDATE ON public.bookings
     FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column(); 
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- =============================================
+-- Enable Row Level Security (after tables are created)
+-- =============================================
+ALTER TABLE public.venues ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.slots ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;

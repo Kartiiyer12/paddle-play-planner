@@ -1,0 +1,588 @@
+create extension if not exists "pgjwt" with schema "extensions";
+
+
+drop trigger if exists "update_bookings_updated_at" on "public"."bookings";
+
+drop trigger if exists "update_profiles_updated_at" on "public"."profiles";
+
+drop trigger if exists "update_slots_updated_at" on "public"."slots";
+
+drop trigger if exists "update_venues_updated_at" on "public"."venues";
+
+alter table "public"."bookings" drop constraint "bookings_user_id_fkey";
+
+alter table "public"."slots" drop constraint "valid_max_players";
+
+alter table "public"."slots" drop constraint "valid_price";
+
+alter table "public"."slots" drop constraint "valid_time_range";
+
+alter table "public"."venues" drop constraint "venues_admin_id_fkey";
+
+drop index if exists "public"."idx_bookings_slot_id";
+
+drop index if exists "public"."idx_bookings_user_id";
+
+drop index if exists "public"."idx_bookings_venue_id";
+
+drop index if exists "public"."idx_slots_start_time";
+
+drop index if exists "public"."idx_slots_venue_id";
+
+create table "public"."admin_settings" (
+    "id" uuid not null default gen_random_uuid(),
+    "venue_id" uuid not null,
+    "admin_id" uuid not null,
+    "allow_booking_without_coins" boolean not null default false,
+    "created_at" timestamp with time zone default now(),
+    "updated_at" timestamp with time zone default now()
+);
+
+
+alter table "public"."admin_settings" enable row level security;
+
+create table "public"."payment_configs" (
+    "id" uuid not null default gen_random_uuid(),
+    "slot_count" integer not null,
+    "amount" numeric(10,2) not null,
+    "venue_id" uuid,
+    "created_at" timestamp with time zone default now(),
+    "updated_at" timestamp with time zone default now()
+);
+
+
+alter table "public"."payment_configs" enable row level security;
+
+alter table "public"."bookings" drop column "updated_at";
+
+alter table "public"."bookings" add column "checked_in" boolean default false;
+
+alter table "public"."bookings" add column "user_name" text;
+
+alter table "public"."bookings" alter column "created_at" set not null;
+
+alter table "public"."bookings" alter column "id" set default gen_random_uuid();
+
+alter table "public"."bookings" alter column "status" drop default;
+
+alter table "public"."profiles" drop column "phone";
+
+alter table "public"."profiles" add column "age" integer;
+
+alter table "public"."profiles" add column "preferred_venues" uuid[] default '{}'::uuid[];
+
+alter table "public"."profiles" add column "sex" text;
+
+alter table "public"."profiles" add column "skill_level" text;
+
+alter table "public"."profiles" add column "slot_coins" integer default 0;
+
+alter table "public"."slots" drop column "price";
+
+alter table "public"."slots" drop column "status";
+
+alter table "public"."slots" add column "current_players" integer not null default 0;
+
+alter table "public"."slots" add column "date" date not null;
+
+alter table "public"."slots" add column "day_of_week" text generated always as (
+CASE EXTRACT(dow FROM date)
+    WHEN 0 THEN 'Sunday'::text
+    WHEN 1 THEN 'Monday'::text
+    WHEN 2 THEN 'Tuesday'::text
+    WHEN 3 THEN 'Wednesday'::text
+    WHEN 4 THEN 'Thursday'::text
+    WHEN 5 THEN 'Friday'::text
+    WHEN 6 THEN 'Saturday'::text
+    ELSE NULL::text
+END) stored;
+
+alter table "public"."slots" alter column "created_at" set not null;
+
+alter table "public"."slots" alter column "end_time" set data type time without time zone using "end_time"::time without time zone;
+
+alter table "public"."slots" alter column "id" set default gen_random_uuid();
+
+alter table "public"."slots" alter column "max_players" set default 4;
+
+alter table "public"."slots" alter column "start_time" set data type time without time zone using "start_time"::time without time zone;
+
+alter table "public"."slots" alter column "updated_at" set not null;
+
+alter table "public"."venues" drop column "email";
+
+alter table "public"."venues" drop column "phone";
+
+alter table "public"."venues" drop column "zip_code";
+
+alter table "public"."venues" add column "court_count" integer not null default 1;
+
+alter table "public"."venues" add column "description" text;
+
+alter table "public"."venues" add column "image_url" text;
+
+alter table "public"."venues" add column "zip" text;
+
+alter table "public"."venues" alter column "admin_id" drop not null;
+
+alter table "public"."venues" alter column "created_at" set not null;
+
+alter table "public"."venues" alter column "id" set default gen_random_uuid();
+
+alter table "public"."venues" alter column "updated_at" set not null;
+
+CREATE UNIQUE INDEX admin_settings_pkey ON public.admin_settings USING btree (id);
+
+CREATE UNIQUE INDEX admin_settings_venue_id_key ON public.admin_settings USING btree (venue_id);
+
+CREATE UNIQUE INDEX payment_configs_pkey ON public.payment_configs USING btree (id);
+
+CREATE UNIQUE INDEX unique_user_slot ON public.bookings USING btree (user_id, slot_id);
+
+alter table "public"."admin_settings" add constraint "admin_settings_pkey" PRIMARY KEY using index "admin_settings_pkey";
+
+alter table "public"."payment_configs" add constraint "payment_configs_pkey" PRIMARY KEY using index "payment_configs_pkey";
+
+alter table "public"."admin_settings" add constraint "admin_settings_venue_id_fkey" FOREIGN KEY (venue_id) REFERENCES venues(id) ON DELETE CASCADE not valid;
+
+alter table "public"."admin_settings" validate constraint "admin_settings_venue_id_fkey";
+
+alter table "public"."admin_settings" add constraint "admin_settings_venue_id_key" UNIQUE using index "admin_settings_venue_id_key";
+
+alter table "public"."bookings" add constraint "bookings_status_check" CHECK ((status = ANY (ARRAY['confirmed'::text, 'cancelled'::text]))) not valid;
+
+alter table "public"."bookings" validate constraint "bookings_status_check";
+
+alter table "public"."bookings" add constraint "unique_user_slot" UNIQUE using index "unique_user_slot";
+
+alter table "public"."payment_configs" add constraint "payment_configs_amount_check" CHECK ((amount >= (0)::numeric)) not valid;
+
+alter table "public"."payment_configs" validate constraint "payment_configs_amount_check";
+
+alter table "public"."payment_configs" add constraint "payment_configs_slot_count_check" CHECK ((slot_count > 0)) not valid;
+
+alter table "public"."payment_configs" validate constraint "payment_configs_slot_count_check";
+
+alter table "public"."payment_configs" add constraint "payment_configs_venue_id_fkey" FOREIGN KEY (venue_id) REFERENCES venues(id) ON DELETE CASCADE not valid;
+
+alter table "public"."payment_configs" validate constraint "payment_configs_venue_id_fkey";
+
+alter table "public"."profiles" add constraint "profiles_sex_check" CHECK ((sex = ANY (ARRAY['male'::text, 'female'::text, 'other'::text]))) not valid;
+
+alter table "public"."profiles" validate constraint "profiles_sex_check";
+
+alter table "public"."profiles" add constraint "profiles_skill_level_check" CHECK ((skill_level = ANY (ARRAY['beginner'::text, 'intermediate'::text, 'advanced'::text, 'expert'::text, 'legendary'::text]))) not valid;
+
+alter table "public"."profiles" validate constraint "profiles_skill_level_check";
+
+alter table "public"."slots" add constraint "slots_end_time_after_start_time" CHECK ((end_time > start_time)) not valid;
+
+alter table "public"."slots" validate constraint "slots_end_time_after_start_time";
+
+alter table "public"."venues" add constraint "venues_admin_id_fkey" FOREIGN KEY (admin_id) REFERENCES auth.users(id) not valid;
+
+alter table "public"."venues" validate constraint "venues_admin_id_fkey";
+
+set check_function_bodies = off;
+
+CREATE OR REPLACE FUNCTION public.book_slot_with_coin(slot_id_param uuid, venue_id_param uuid, allow_booking_without_coins_param boolean, user_name_param text)
+ RETURNS json
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$DECLARE
+  v_user_id UUID;
+  v_slot_coins INT;
+  v_booking_id UUID;
+  v_result RECORD;
+  v_venue_settings RECORD;
+BEGIN
+  -- Get the current user ID
+  v_user_id := auth.uid();
+  
+  -- Check if user exists
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'User not authenticated';
+  END IF;
+
+  -- Get the user's slot coins
+  SELECT slot_coins INTO v_slot_coins
+  FROM public.profiles
+  WHERE id = v_user_id;
+  
+  -- Get venue settings
+  SELECT allow_booking_without_coins INTO v_venue_settings
+  FROM public.admin_settings
+  WHERE venue_id = venue_id_param
+  LIMIT 1;
+  
+  -- Use venue settings if available, otherwise use the parameter
+  IF v_venue_settings IS NOT NULL THEN
+    allow_booking_without_coins_param := v_venue_settings.allow_booking_without_coins;
+  END IF;
+  
+  -- Check if user has enough coins or if booking without coins is allowed
+  IF v_slot_coins <= 0 AND NOT allow_booking_without_coins_param THEN
+    RAISE EXCEPTION 'Not enough coins to book this slot';
+  END IF;
+  
+  -- Create the booking
+  INSERT INTO public.bookings (
+    user_id,
+    slot_id,
+    venue_id,
+    status,
+    user_name,
+    checked_in
+  )
+  VALUES (
+    v_user_id,
+    slot_id_param,
+    venue_id_param,
+    'confirmed',
+    user_name_param,
+    false
+  )
+  RETURNING id INTO v_booking_id;
+  
+  -- Deduct coin if needed (when not allowing booking without coins)
+  IF NOT allow_booking_without_coins_param AND v_slot_coins > 0 THEN
+    UPDATE public.profiles
+    SET slot_coins = slot_coins - 1
+    WHERE id = v_user_id;
+  END IF;
+  
+  -- Return the booking details
+  SELECT * INTO v_result 
+  FROM public.bookings
+  WHERE id = v_booking_id;
+  
+  RETURN row_to_json(v_result);
+END;$function$
+;
+
+CREATE OR REPLACE FUNCTION public.cancel_booking_with_refund(booking_id_param uuid, refund_coin boolean)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+  v_user_id UUID;
+  v_booking_user_id UUID;
+  v_slot_id UUID;
+  v_venue_id UUID;
+  v_allow_booking_without_coins BOOLEAN;
+  v_booking_was_made_with_coin BOOLEAN;
+BEGIN
+  -- Get the current user ID
+  v_user_id := auth.uid();
+  
+  -- Check if user exists
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'User not authenticated';
+  END IF;
+  
+  -- Check if the booking exists and belongs to the user
+  SELECT user_id, slot_id, venue_id 
+  INTO v_booking_user_id, v_slot_id, v_venue_id
+  FROM public.bookings
+  WHERE id = booking_id_param;
+  
+  IF v_booking_user_id IS NULL THEN
+    RAISE EXCEPTION 'Booking not found';
+  END IF;
+  
+  -- Check if the current user is the booking owner or an admin
+  IF v_user_id <> v_booking_user_id AND 
+     NOT EXISTS (
+       SELECT 1 FROM auth.users 
+       WHERE id = v_user_id 
+       AND raw_user_meta_data->>'role' = 'admin'
+     ) THEN
+    RAISE EXCEPTION 'You can only cancel your own bookings';
+  END IF;
+  
+  -- Get venue settings
+  SELECT allow_booking_without_coins 
+  INTO v_allow_booking_without_coins
+  FROM public.admin_settings
+  WHERE venue_id = v_venue_id
+  LIMIT 1;
+  
+  -- Default to false if no settings found
+  IF v_allow_booking_without_coins IS NULL THEN
+    v_allow_booking_without_coins := false;
+  END IF;
+  
+  -- Check if the booking was made with a coin
+  -- This is determined by whether the venue allowed booking without coins at the time of booking
+  v_booking_was_made_with_coin := NOT v_allow_booking_without_coins;
+  
+  -- Delete the booking
+  DELETE FROM public.bookings
+  WHERE id = booking_id_param;
+  
+  -- Refund coin if needed and if we should refund
+  IF refund_coin AND v_booking_was_made_with_coin THEN
+    UPDATE public.profiles
+    SET slot_coins = slot_coins + 1
+    WHERE id = v_booking_user_id;
+  END IF;
+  
+  RETURN true;
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.handle_booking_deletion()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+  IF (OLD.status = 'confirmed') THEN
+    UPDATE public.slots 
+    SET current_players = GREATEST(current_players - 1, 0)
+    WHERE id = OLD.slot_id;
+  END IF;
+  RETURN OLD;
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.set_admin_id_on_venue_insert()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+  IF NEW.admin_id IS NULL THEN
+    NEW.admin_id := auth.uid();
+  END IF;
+  RETURN NEW;
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.set_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.update_slot_player_count()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+  IF (TG_OP = 'INSERT' AND NEW.status = 'confirmed') THEN
+    UPDATE public.slots 
+    SET current_players = current_players + 1
+    WHERE id = NEW.slot_id;
+  ELSIF (TG_OP = 'UPDATE' AND OLD.status != 'confirmed' AND NEW.status = 'confirmed') THEN
+    UPDATE public.slots 
+    SET current_players = current_players + 1
+    WHERE id = NEW.slot_id;
+  ELSIF (TG_OP = 'UPDATE' AND OLD.status = 'confirmed' AND NEW.status != 'confirmed') THEN
+    UPDATE public.slots 
+    SET current_players = GREATEST(current_players - 1, 0)
+    WHERE id = NEW.slot_id;
+  END IF;
+  
+  RETURN NEW;
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$function$
+;
+
+grant delete on table "public"."admin_settings" to "anon";
+
+grant insert on table "public"."admin_settings" to "anon";
+
+grant references on table "public"."admin_settings" to "anon";
+
+grant select on table "public"."admin_settings" to "anon";
+
+grant trigger on table "public"."admin_settings" to "anon";
+
+grant truncate on table "public"."admin_settings" to "anon";
+
+grant update on table "public"."admin_settings" to "anon";
+
+grant delete on table "public"."admin_settings" to "authenticated";
+
+grant insert on table "public"."admin_settings" to "authenticated";
+
+grant references on table "public"."admin_settings" to "authenticated";
+
+grant select on table "public"."admin_settings" to "authenticated";
+
+grant trigger on table "public"."admin_settings" to "authenticated";
+
+grant truncate on table "public"."admin_settings" to "authenticated";
+
+grant update on table "public"."admin_settings" to "authenticated";
+
+grant delete on table "public"."admin_settings" to "service_role";
+
+grant insert on table "public"."admin_settings" to "service_role";
+
+grant references on table "public"."admin_settings" to "service_role";
+
+grant select on table "public"."admin_settings" to "service_role";
+
+grant trigger on table "public"."admin_settings" to "service_role";
+
+grant truncate on table "public"."admin_settings" to "service_role";
+
+grant update on table "public"."admin_settings" to "service_role";
+
+grant delete on table "public"."payment_configs" to "anon";
+
+grant insert on table "public"."payment_configs" to "anon";
+
+grant references on table "public"."payment_configs" to "anon";
+
+grant select on table "public"."payment_configs" to "anon";
+
+grant trigger on table "public"."payment_configs" to "anon";
+
+grant truncate on table "public"."payment_configs" to "anon";
+
+grant update on table "public"."payment_configs" to "anon";
+
+grant delete on table "public"."payment_configs" to "authenticated";
+
+grant insert on table "public"."payment_configs" to "authenticated";
+
+grant references on table "public"."payment_configs" to "authenticated";
+
+grant select on table "public"."payment_configs" to "authenticated";
+
+grant trigger on table "public"."payment_configs" to "authenticated";
+
+grant truncate on table "public"."payment_configs" to "authenticated";
+
+grant update on table "public"."payment_configs" to "authenticated";
+
+grant delete on table "public"."payment_configs" to "service_role";
+
+grant insert on table "public"."payment_configs" to "service_role";
+
+grant references on table "public"."payment_configs" to "service_role";
+
+grant select on table "public"."payment_configs" to "service_role";
+
+grant trigger on table "public"."payment_configs" to "service_role";
+
+grant truncate on table "public"."payment_configs" to "service_role";
+
+grant update on table "public"."payment_configs" to "service_role";
+
+create policy "Admins can insert their own settings"
+on "public"."admin_settings"
+as permissive
+for insert
+to public
+with check ((admin_id = auth.uid()));
+
+
+create policy "Admins can update their own settings"
+on "public"."admin_settings"
+as permissive
+for update
+to public
+using ((admin_id = auth.uid()));
+
+
+create policy "Admins can view their own settings"
+on "public"."admin_settings"
+as permissive
+for select
+to public
+using ((admin_id = auth.uid()));
+
+
+create policy "Admins can delete payment configs for their venues"
+on "public"."payment_configs"
+as permissive
+for delete
+to public
+using ((venue_id IN ( SELECT venues.id
+   FROM venues
+  WHERE (venues.admin_id = auth.uid()))));
+
+
+create policy "Admins can insert payment configs for their venues"
+on "public"."payment_configs"
+as permissive
+for insert
+to public
+with check ((venue_id IN ( SELECT venues.id
+   FROM venues
+  WHERE (venues.admin_id = auth.uid()))));
+
+
+create policy "Admins can update payment configs for their venues"
+on "public"."payment_configs"
+as permissive
+for update
+to public
+using ((venue_id IN ( SELECT venues.id
+   FROM venues
+  WHERE (venues.admin_id = auth.uid()))));
+
+
+create policy "Admins can view their venue payment configs"
+on "public"."payment_configs"
+as permissive
+for select
+to public
+using ((venue_id IN ( SELECT venues.id
+   FROM venues
+  WHERE (venues.admin_id = auth.uid()))));
+
+
+create policy "Venue owners can view and update user profiles"
+on "public"."profiles"
+as permissive
+for all
+to public
+using (((EXISTS ( SELECT 1
+   FROM venues
+  WHERE (venues.admin_id = auth.uid()))) AND (id IN ( SELECT DISTINCT b.user_id
+   FROM (bookings b
+     JOIN venues v ON ((b.venue_id = v.id)))
+  WHERE (v.admin_id = auth.uid())))));
+
+
+CREATE TRIGGER update_admin_settings_updated_at BEFORE UPDATE ON public.admin_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER handle_booking_deletion_trigger BEFORE DELETE ON public.bookings FOR EACH ROW EXECUTE FUNCTION handle_booking_deletion();
+
+CREATE TRIGGER update_slot_player_count_trigger AFTER INSERT OR UPDATE OF status ON public.bookings FOR EACH ROW EXECUTE FUNCTION update_slot_player_count();
+
+CREATE TRIGGER set_payment_configs_updated_at BEFORE UPDATE ON public.payment_configs FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER set_slots_updated_at BEFORE UPDATE ON public.slots FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER set_admin_id_on_venue_insert_trigger BEFORE INSERT ON public.venues FOR EACH ROW EXECUTE FUNCTION set_admin_id_on_venue_insert();
+
+CREATE TRIGGER set_venues_updated_at BEFORE UPDATE ON public.venues FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+

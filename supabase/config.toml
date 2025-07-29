@@ -39,7 +39,3 @@ enable_signup = true
 
 [realtime]
 enabled = true
-
-[edge_functions]
-[edge_functions.create-checkout-session]
-verify_jwt = true
