@@ -164,6 +164,14 @@ export const bookSlot = async (slotId: string, venueId: string) => {
     user_name: string | null;
   };
   
+  // Send booking confirmation email
+  try {
+    await sendBookingConfirmationEmail(bookingData.id, slotId, venueId);
+  } catch (emailError) {
+    // Don't fail the booking if email fails, just log the error
+    console.error("Failed to send booking confirmation email:", emailError);
+  }
+  
   return {
     id: bookingData.id,
     userId: bookingData.user_id,
@@ -223,4 +231,64 @@ export const cancelBooking = async (bookingId: string) => {
   }
   
   return true;
+};
+
+/**
+ * Send booking confirmation email
+ */
+const sendBookingConfirmationEmail = async (bookingId: string, slotId: string, venueId: string) => {
+  // Get detailed booking information for email
+  const { data: bookingDetails, error: bookingError } = await supabase
+    .from("bookings")
+    .select(`
+      *,
+      venues:venue_id (name),
+      slots:slot_id (date, start_time, end_time)
+    `)
+    .eq("id", bookingId)
+    .single();
+
+  if (bookingError || !bookingDetails) {
+    throw new Error("Failed to fetch booking details for email");
+  }
+
+  // Get user profile for email
+  const { data: profileData, error: profileError } = await supabase
+    .from("profiles")
+    .select("name")
+    .eq("id", bookingDetails.user_id)
+    .single();
+
+  if (profileError || !profileData) {
+    throw new Error("Failed to fetch user profile for email");
+  }
+
+  // Get user email from auth
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user?.email) {
+    throw new Error("Failed to get user email");
+  }
+
+  // Prepare email data
+  const emailData = {
+    booking_id: bookingDetails.id,
+    user_email: userData.user.email,
+    user_name: profileData.name || userData.user.email.split('@')[0],
+    venue_name: bookingDetails.venues.name,
+    slot_date: bookingDetails.slots.date,
+    slot_start_time: bookingDetails.slots.start_time,
+    slot_end_time: bookingDetails.slots.end_time,
+    booking_created_at: bookingDetails.created_at,
+  };
+
+  // Call the edge function to send email
+  const { data, error } = await supabase.functions.invoke('send-booking-confirmation', {
+    body: { booking_data: emailData }
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
 };
