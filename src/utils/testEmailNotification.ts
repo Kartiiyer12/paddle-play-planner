@@ -4,17 +4,17 @@ import { supabase } from "@/integrations/supabase/client";
  * Test function to verify email notifications are working
  * This can be called from browser console for testing
  */
-export const testBookingConfirmationEmail = async () => {
+export const testBookingConfirmationEmail = async (userEmail?: string) => {
   try {
     console.log("Testing booking confirmation email...");
     
     // Test data
     const testEmailData = {
       booking_id: "test-booking-123",
-      user_email: "test@example.com", // Replace with your test email
+      user_email: userEmail || "your-email@example.com", // Replace with your actual email
       user_name: "Test User",
       venue_name: "Test Venue",
-      slot_date: "2024-08-01",
+      slot_date: "2025-08-01",
       slot_start_time: "10:00",
       slot_end_time: "11:00",
       booking_created_at: new Date().toISOString(),

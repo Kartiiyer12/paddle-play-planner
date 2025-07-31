@@ -166,10 +166,13 @@ export const bookSlot = async (slotId: string, venueId: string) => {
   
   // Send booking confirmation email
   try {
+    console.log("🚀 Attempting to send booking confirmation email for booking:", bookingData.id);
     await sendBookingConfirmationEmail(bookingData.id, slotId, venueId);
+    console.log("✅ Email sent successfully for booking:", bookingData.id);
   } catch (emailError) {
     // Don't fail the booking if email fails, just log the error
-    console.error("Failed to send booking confirmation email:", emailError);
+    console.error("❌ Failed to send booking confirmation email:", emailError);
+    console.error("Email error details:", JSON.stringify(emailError, null, 2));
   }
   
   return {
@@ -237,7 +240,10 @@ export const cancelBooking = async (bookingId: string) => {
  * Send booking confirmation email
  */
 const sendBookingConfirmationEmail = async (bookingId: string, slotId: string, venueId: string) => {
+  console.log("📧 Starting email send process for booking:", bookingId);
+  
   // Get detailed booking information for email
+  console.log("📋 Fetching booking details...");
   const { data: bookingDetails, error: bookingError } = await supabase
     .from("bookings")
     .select(`
@@ -249,10 +255,13 @@ const sendBookingConfirmationEmail = async (bookingId: string, slotId: string, v
     .single();
 
   if (bookingError || !bookingDetails) {
+    console.error("❌ Booking details error:", bookingError);
     throw new Error("Failed to fetch booking details for email");
   }
+  console.log("✅ Booking details fetched:", bookingDetails);
 
   // Get user profile for email
+  console.log("👤 Fetching user profile...");
   const { data: profileData, error: profileError } = await supabase
     .from("profiles")
     .select("name")
@@ -260,14 +269,19 @@ const sendBookingConfirmationEmail = async (bookingId: string, slotId: string, v
     .single();
 
   if (profileError || !profileData) {
+    console.error("❌ Profile error:", profileError);
     throw new Error("Failed to fetch user profile for email");
   }
+  console.log("✅ Profile data fetched:", profileData);
 
   // Get user email from auth
+  console.log("🔐 Getting user email from auth...");
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData.user?.email) {
+    console.error("❌ User auth error:", userError);
     throw new Error("Failed to get user email");
   }
+  console.log("✅ User email:", userData.user.email);
 
   // Prepare email data
   const emailData = {
@@ -282,13 +296,16 @@ const sendBookingConfirmationEmail = async (bookingId: string, slotId: string, v
   };
 
   // Call the edge function to send email
+  console.log("📤 Calling edge function with email data:", emailData);
   const { data, error } = await supabase.functions.invoke('send-booking-confirmation', {
     body: { booking_data: emailData }
   });
 
   if (error) {
+    console.error("❌ Edge function error:", error);
     throw error;
   }
 
+  console.log("✅ Edge function response:", data);
   return data;
 };
