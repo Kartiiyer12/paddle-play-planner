@@ -85,13 +85,10 @@ FOR ALL
 USING (auth.uid() = id)
 WITH CHECK (auth.uid() = id);
 
--- Allow venue owners to view user profiles
-CREATE POLICY "Venue owners can view user profiles"
+-- Allow admins to view user profiles
+CREATE POLICY "Admins can view user profiles"
 ON public.profiles
 FOR SELECT
 USING (
-  EXISTS (
-    SELECT 1 FROM public.venues 
-    WHERE admin_id = auth.uid()
-  )
+  auth.jwt() ->> 'role' = 'admin'
 ); 

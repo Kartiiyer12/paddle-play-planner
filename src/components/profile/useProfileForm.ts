@@ -5,18 +5,12 @@ import { toast } from "sonner";
 
 export type ProfileFormData = {
   name: string;
-  age: string;
-  sex: "male" | "female" | "other";
-  skillLevel: "beginner" | "intermediate" | "advanced" | "expert" | "legendary";
   preferredVenues: string[];
 };
 
 export const useProfileForm = (userId: string, onSaved?: () => void) => {
   const [formData, setFormData] = useState<ProfileFormData>({
     name: "",
-    age: "",
-    sex: "male",
-    skillLevel: "beginner",
     preferredVenues: []
   });
   
@@ -33,9 +27,6 @@ export const useProfileForm = (userId: string, onSaved?: () => void) => {
         if (profile) {
           setFormData({
             name: profile.name || "",
-            age: profile.age ? profile.age.toString() : "",
-            sex: (profile.sex as "male" | "female" | "other") || "male",
-            skillLevel: (profile.skill_level as "beginner" | "intermediate" | "advanced" | "expert" | "legendary") || "beginner",
             preferredVenues: profile.preferred_venues || []
           });
         }
@@ -76,14 +67,8 @@ export const useProfileForm = (userId: string, onSaved?: () => void) => {
     try {
       console.log("Submitting profile data:", formData);
       
-      // Fix: Ensure age is properly converted to number or undefined
-      const ageValue = formData.age ? parseInt(formData.age) : undefined;
-      
       const result = await updateProfile(userId, {
         name: formData.name,
-        age: ageValue,
-        sex: formData.sex,
-        skill_level: formData.skillLevel,
         preferred_venues: formData.preferredVenues
       });
       

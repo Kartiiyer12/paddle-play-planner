@@ -29,9 +29,6 @@ const ProfileForm = ({ userId, venues, onSaved }: ProfileFormProps) => {
     <form onSubmit={handleSubmit} className="space-y-6">
       <ProfileInfoFields
         name={formData.name}
-        age={formData.age}
-        sex={formData.sex}
-        skillLevel={formData.skillLevel}
         onInputChange={handleInputChange}
         disabled={isSaving}
       />

@@ -5,88 +5,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 interface ProfileInfoFieldsProps {
   name: string;
-  age: string;
-  sex: "male" | "female" | "other";
-  skillLevel: "beginner" | "intermediate" | "advanced" | "expert" | "legendary";
   onInputChange: (field: string, value: string) => void;
   disabled?: boolean;
 }
 
 const ProfileInfoFields = ({
   name,
-  age,
-  sex,
-  skillLevel,
   onInputChange,
   disabled = false
 }: ProfileInfoFieldsProps) => {
   return (
-    <>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
-          <Label htmlFor="name">Name</Label>
-          <Input 
-            id="name" 
-            value={name} 
-            onChange={(e) => onInputChange("name", e.target.value)} 
-            placeholder="Your name"
-            disabled={disabled}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="age">Age</Label>
-          <Input 
-            id="age" 
-            type="number" 
-            value={age} 
-            onChange={(e) => onInputChange("age", e.target.value)} 
-            placeholder="Your age"
-            disabled={disabled}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
-          <Label htmlFor="sex">Sex</Label>
-          <Select 
-            value={sex} 
-            onValueChange={(value: "male" | "female" | "other") => onInputChange("sex", value)}
-            disabled={disabled}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select your sex" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="male">Male</SelectItem>
-              <SelectItem value="female">Female</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="skillLevel">Skill Level</Label>
-          <Select 
-            value={skillLevel} 
-            onValueChange={(value: "beginner" | "intermediate" | "advanced" | "expert" | "legendary") => 
-              onInputChange("skillLevel", value)
-            }
-            disabled={disabled}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select your skill level" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="beginner">Beginner</SelectItem>
-              <SelectItem value="intermediate">Intermediate</SelectItem>
-              <SelectItem value="advanced">Advanced</SelectItem>
-              <SelectItem value="expert">Expert</SelectItem>
-              <SelectItem value="legendary">Legendary</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-    </>
+    <div className="space-y-2">
+      <Label htmlFor="name">Name</Label>
+      <Input 
+        id="name" 
+        value={name} 
+        onChange={(e) => onInputChange("name", e.target.value)} 
+        placeholder="Your name"
+        disabled={true} // Always disabled - name comes from registration
+        className="bg-gray-50"
+      />
+      <p className="text-sm text-gray-500">
+        Name was set during registration. Contact support if you need to change it.
+      </p>
+    </div>
   );
 };
 

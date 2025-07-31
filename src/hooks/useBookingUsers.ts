@@ -36,36 +36,45 @@ export const useBookingUsers = () => {
       
       // Check if user is admin
       const isAdmin = userData.user.user_metadata?.role === 'admin';
+      console.log("Current user metadata:", userData.user.user_metadata);
+      console.log("Is user admin?", isAdmin);
+      console.log("User JWT claims:", userData.user);
       
       if (!isAdmin) {
         // This hook is likely admin-only, but double-check usage if non-admins might call it
         throw new Error("Only admins can access user booking data");
       }
 
-      // Fetch venues owned by this admin
-      const allowedVenueIds = await getAllowedVenueIdsForAdmin(userData.user.id);
-      if (allowedVenueIds.length === 0) {
-          console.log(`Admin ${userData.user.id} owns no venues. Returning empty user list.`);
-          setUsers([]);
-          setIsLoading(false);
-          return; // Admin owns no venues, so no users from bookings
+      console.log(`Admin ${userData.user.id} fetching all registered users`);
+
+      // Show all non-admin registered users to admin
+      console.log("Executing query for non-admin users...");
+      const { data: nonAdminUsers, error: usersError } = await supabase
+        .from('profiles')
+        .select('id, name, email, slot_coins, is_admin')
+        .not('name', 'is', null) // Only get profiles with names (registered users)
+        .eq('is_admin', false); // Only get non-admin users
+        
+      if (usersError) {
+        console.error("Error fetching users:", usersError);
+        throw usersError;
       }
+      
+      console.log("Non-admin users from database:", nonAdminUsers);
+      
+      // Debug: Try to fetch all profiles to see what we can access
+      const { data: allProfiles, error: allError } = await supabase
+        .from('profiles')
+        .select('id, name, email, is_admin');
+      console.log("All profiles accessible to admin:", allProfiles);
+      if (allError) console.error("Error fetching all profiles:", allError);
 
-      console.log(`Admin ${userData.user.id} fetching bookings for user aggregation from venues:`, allowedVenueIds);
-
-      // Get all bookings ONLY from the admin's venues
+      // Get all bookings (for now, will add venue filtering later)
       const { data: bookings, error: bookingsError } = await supabase
         .from('bookings')
-        .select('user_id, user_name, created_at, checked_in, venue_id') // Include venue_id for filtering
-        .in('venue_id', allowedVenueIds); // Filter here!
+        .select('user_id, user_name, created_at, checked_in, venue_id');
         
       if (bookingsError) throw bookingsError;
-      
-      if (!bookings) {
-        setUsers([]);
-        setIsLoading(false);
-        return;
-      }
 
       // Group by user_id and count bookings (from the filtered list)
       // Define the structure for the map including email and slot_coins
@@ -79,7 +88,21 @@ export const useBookingUsers = () => {
       };
       const userMap = new Map<string, UserMapEntry>();
       
-      bookings.forEach(booking => {
+      // First, add all non-admin registered users (even if they haven't booked yet)
+      nonAdminUsers?.forEach(user => {
+        if (!user) return;
+        
+        userMap.set(user.id, {
+          id: user.id,
+          name: user.name || 'Unknown User',
+          email: user.email || null,
+          bookingsCount: 0, // Will be updated if they have bookings
+          slotCoins: user.slot_coins || 0
+        });
+      });
+      
+      // Then, process bookings and update/add users from booking history
+      bookings?.forEach(booking => {
         if (!booking) return;
         
         const userId = booking.user_id;
@@ -96,7 +119,7 @@ export const useBookingUsers = () => {
           }
           
         } else {
-            // Initialize new entry with null email and slot_coins
+            // Initialize new entry for users found only in bookings
             existingUser = {
                 id: userId,
                 name: userName || 'Unknown User', // Default to Unknown if name is null
@@ -112,11 +135,14 @@ export const useBookingUsers = () => {
       // Convert map to array
       const userArray = Array.from(userMap.values());
       
-      // Fetch profile details (including email and slot_coins) for users
-      const userIdsToFetch = userArray.map(u => u.id);
+      // Fetch profile details for users who don't already have complete data
+      // (mainly for users found only through bookings)
+      const userIdsToFetch = userArray
+        .filter(user => !user.email || user.slotCoins === undefined)
+        .map(u => u.id);
       
       if (userIdsToFetch.length > 0) {
-          console.log("Fetching profile details for users:", userIdsToFetch);
+          console.log("Fetching missing profile details for users:", userIdsToFetch);
           const { data: profiles, error: profilesError } = await supabase
               .from('profiles')
               .select('id, name, email, slot_coins') // Select slot_coins as well
@@ -146,6 +172,9 @@ export const useBookingUsers = () => {
           slotCoins: u.slotCoins || 0 // Ensure slotCoins is never null
       }));
 
+      console.log(`Found ${nonAdminUsers?.length || 0} non-admin users`);
+      console.log(`Found ${finalUsers.length} users to display in admin panel`);
+      
       setUsers(finalUsers);
       
     } catch (err: any) {
