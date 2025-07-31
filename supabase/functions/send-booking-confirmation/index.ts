@@ -138,7 +138,7 @@ serve(async (req) => {
     
     // Send email via Resend
     const { data, error } = await resend.emails.send({
-      from: "Paddle Play Planner <bookings@paddleplayplanner.com>",
+      from: "Paddle Play Planner <onboarding@resend.dev>",
       to: [booking_data.user_email],
       subject: `🏓 Booking Confirmed - ${booking_data.venue_name} on ${new Date(booking_data.slot_date).toLocaleDateString()}`,
       html: htmlContent,
