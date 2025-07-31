@@ -12,7 +12,7 @@ import { useAuth } from "@/context/AuthContext";
 import VenueSelector from "@/components/booking/VenueSelector";
 import AvailableSlots from "@/components/booking/AvailableSlots";
 import { add, format } from "date-fns";
-import { getAdminSettings } from "@/services/adminSettingsService";
+import { getVenueBookingPolicy } from "@/services/adminSettingsService";
 import { Coins } from "lucide-react";
 import { getUserSlotCoins } from "@/services/profileService";
 
@@ -64,10 +64,10 @@ const BookSlot = () => {
   const loadAdminSettings = async () => {
     if (selectedVenue) {
       try {
-        const settings = await getAdminSettings(selectedVenue);
-        setAllowBookingWithoutCoins(settings?.allow_booking_without_coins || false);
+        const policy = await getVenueBookingPolicy(selectedVenue);
+        setAllowBookingWithoutCoins(policy.allow_booking_without_coins);
       } catch (error) {
-        console.error("Error loading admin settings:", error);
+        console.error("Error loading venue booking policy:", error);
         // Default to false if there's an error or no settings
         setAllowBookingWithoutCoins(false);
       }

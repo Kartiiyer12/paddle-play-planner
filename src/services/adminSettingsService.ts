@@ -12,7 +12,7 @@ export interface AdminSettings {
 }
 
 /**
- * Get admin settings for a venue
+ * Get admin settings for a venue (for admin management)
  */
 export const getAdminSettings = async (venueId: string): Promise<AdminSettings | null> => {
   const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -34,6 +34,32 @@ export const getAdminSettings = async (venueId: string): Promise<AdminSettings |
   }
   
   return data as AdminSettings | null;
+};
+
+/**
+ * Get venue booking policy (for all users including non-admins)
+ */
+export const getVenueBookingPolicy = async (venueId: string): Promise<{ allow_booking_without_coins: boolean }> => {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  
+  if (userError || !userData.user) {
+    throw userError || new Error("User not authenticated");
+  }
+
+  const { data, error } = await supabase
+    .from("admin_settings")
+    .select("allow_booking_without_coins")
+    .eq("venue_id", venueId)
+    .maybeSingle();
+  
+  if (error) {
+    console.error("Error fetching venue booking policy:", error);
+    // Default to requiring coins if we can't fetch settings
+    return { allow_booking_without_coins: false };
+  }
+  
+  // If no admin settings exist for this venue, default to requiring coins
+  return data ? data : { allow_booking_without_coins: false };
 };
 
 /**

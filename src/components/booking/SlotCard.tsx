@@ -37,10 +37,12 @@ const SlotCard = ({
   // Check if slot is full
   const isFull = availableSpots <= 0;
   
-  // Check if user has enough coins when needed
+  // Check if user has enough coins when coins are required
   const hasNoCoins = !allowBookingWithoutCoins && userSlotCoins <= 0;
   
   // Determine if booking is allowed
+  // If allowBookingWithoutCoins is true, always allow booking (regardless of coin balance)
+  // If allowBookingWithoutCoins is false, only allow if user has coins
   const canBookSlot = canBook && !isFull && !isBooked && (allowBookingWithoutCoins || userSlotCoins > 0);
   
   // Determine button label

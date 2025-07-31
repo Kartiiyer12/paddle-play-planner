@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Booking, BookingWithDetails } from "@/models/types";
 import { isAfter, parseISO, startOfDay } from "date-fns";
-import { getAdminSettings } from "./adminSettingsService";
+import { getVenueBookingPolicy } from "./adminSettingsService";
 import { getUserSlotCoins } from "./profileService";
 
 /**
@@ -123,9 +123,9 @@ export const bookSlot = async (slotId: string, venueId: string) => {
     throw new Error("User profile not found");
   }
 
-  // Get admin settings for this venue
-  const adminSettings = await getAdminSettings(venueId);
-  const allowBookingWithoutCoins = adminSettings?.allow_booking_without_coins || false;
+  // Get venue booking policy
+  const policy = await getVenueBookingPolicy(venueId);
+  const allowBookingWithoutCoins = policy.allow_booking_without_coins;
 
   // Check if user has enough coins or if booking without coins is allowed
   if (slotCoins <= 0 && !allowBookingWithoutCoins) {
