@@ -4,15 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Edit, Trash, Calendar, CalendarClock, Users, History } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
+import { Plus, Edit, Trash, Calendar, Users, History } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import SlotForm from "./SlotForm";
 import { Slot, Venue } from "@/models/types";
 import { getSlots, deleteSlot } from "@/services/slotService";
 import { getVenues } from "@/services/venueService";
-import { isAutoCreateSlotsEnabled, setAutoCreateSlotsEnabled, createSlotsForNext7Days } from "@/services/autoSlotService";
 import PlayerCheckInDialog from "./PlayerCheckInDialog";
 import { format, isToday, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +24,6 @@ const SlotManagementPanel = () => {
   const [isDeleteSlotDialogOpen, setIsDeleteSlotDialogOpen] = useState(false);
   const [slotToDelete, setSlotToDelete] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [autoCreateSlots, setAutoCreateSlots] = useState(false);
   const [isPlayerCheckInDialogOpen, setIsPlayerCheckInDialogOpen] = useState(false);
   const isMobile = useIsMobile();
 
@@ -37,14 +34,12 @@ const SlotManagementPanel = () => {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [venueData, slotData, autoCreateEnabled] = await Promise.all([
+      const [venueData, slotData] = await Promise.all([
         getVenues(),
-        getSlots(),
-        isAutoCreateSlotsEnabled()
+        getSlots()
       ]);
       setVenues(venueData);
       setSlots(slotData);
-      setAutoCreateSlots(autoCreateEnabled);
     } catch (error) {
       toast.error("Failed to load data");
     } finally {
@@ -90,24 +85,6 @@ const SlotManagementPanel = () => {
     loadData();
   };
 
-  const toggleAutoCreateSlots = async (enabled: boolean) => {
-    try {
-      await setAutoCreateSlotsEnabled(enabled);
-      setAutoCreateSlots(enabled);
-      
-      if (enabled) {
-        // If enabling, run the slot creation process once to demonstrate
-        await createSlotsForNext7Days();
-        toast.success("Automatic slot creation enabled and slots for next week have been created");
-        // Reload slots to show the newly created ones
-        loadData();
-      } else {
-        toast.success("Automatic slot creation disabled");
-      }
-    } catch (error) {
-      toast.error("Failed to update automatic slot creation");
-    }
-  };
 
   const todaySlots = slots.filter(slot => isToday(parseISO(slot.date)));
   const futureSlots = slots.filter(slot => !isToday(parseISO(slot.date)) && parseISO(slot.date) > new Date());
@@ -222,20 +199,6 @@ const SlotManagementPanel = () => {
                 </Link>
               </Button>
             </div>
-          </div>
-          
-          <div className="mt-6 flex items-center justify-between border-t border-gray-200 pt-4">
-            <div className="flex items-center">
-              <CalendarClock className="h-5 w-5 text-pickleball-purple mr-2" />
-              <div>
-                <h3 className="font-medium">Auto-Create Weekly Slots</h3>
-                <p className="text-sm text-gray-500">Automatically create slots weekly based on template</p>
-              </div>
-            </div>
-            <Switch 
-              checked={autoCreateSlots} 
-              onCheckedChange={toggleAutoCreateSlots}
-            />
           </div>
         </CardContent>
       </Card>

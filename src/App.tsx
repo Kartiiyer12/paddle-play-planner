@@ -14,6 +14,8 @@ import { AuthProvider } from "./context/AuthContext";
 import Profile from "./pages/Profile";
 import MyBookings from "./pages/MyBookings";
 import OldSlotsPanel from "./pages/admin/OldSlotsPanel";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import { useAuth } from "./context/AuthContext";
 
 // Protected route component for non-admin users
@@ -78,6 +80,10 @@ const App = () => {
               <Route path="/admin/settings" element={<AdminPanel />} />
               <Route path="/admin/payments" element={<AdminPanel />} />
               <Route path="/admin/old-slots" element={<OldSlotsPanel />} />
+              
+              {/* Public pages */}
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfService />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>

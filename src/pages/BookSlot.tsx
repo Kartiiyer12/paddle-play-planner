@@ -41,6 +41,27 @@ const BookSlot = () => {
     }
   }, [user, isLoadingAuth, navigate]);
 
+  // Separate effect to handle preferred venue selection when user data is fully loaded
+  useEffect(() => {
+    console.log("Checking preferred venues:", {
+      hasPreferredVenues: user?.preferredVenues?.length > 0,
+      preferredVenues: user?.preferredVenues,
+      hasVenues: venues.length > 0,
+      selectedVenue
+    });
+    
+    if (user?.preferredVenues?.length && venues.length && !selectedVenue) {
+      // Check if the preferred venue exists in the loaded venues
+      const preferredVenueExists = venues.some(venue => venue.id === user.preferredVenues[0]);
+      if (preferredVenueExists) {
+        console.log("Setting preferred venue as default:", user.preferredVenues[0]);
+        handleVenueChange(user.preferredVenues[0]);
+      } else {
+        console.log("Preferred venue not found in available venues");
+      }
+    }
+  }, [user?.preferredVenues, venues, selectedVenue]);
+
   useEffect(() => {
     if (selectedVenue && user?.id) {
       loadAdminSettings();
@@ -89,11 +110,6 @@ const BookSlot = () => {
       // Load venues
       const venuesData = await getVenues();
       setVenues(venuesData);
-
-      // Try to set default venue from user preferred venues
-      if (user?.preferredVenues?.length) {
-        setSelectedVenue(user.preferredVenues[0]);
-      }
 
       // Load user coins
       await loadUserCoins();
@@ -210,16 +226,25 @@ const BookSlot = () => {
               </div>
             </div>
 
-            <AvailableSlots
-              availableSlots={availableSlots}
-              venues={venues}
-              selectedVenue={selectedVenue}
-              onBookSlot={handleBookSlot}
-              isBooking={isBooking}
-              userBookedSlotIds={userBookedSlotIds}
-              userSlotCoins={userSlotCoins}
-              allowBookingWithoutCoins={allowBookingWithoutCoins}
-            />
+            {selectedVenue ? (
+              <AvailableSlots
+                availableSlots={availableSlots}
+                venues={venues}
+                selectedVenue={selectedVenue}
+                onBookSlot={handleBookSlot}
+                isBooking={isBooking}
+                userBookedSlotIds={userBookedSlotIds}
+                userSlotCoins={userSlotCoins}
+                allowBookingWithoutCoins={allowBookingWithoutCoins}
+              />
+            ) : (
+              <div className="bg-white p-8 rounded-lg shadow-sm border text-center">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Venue</h3>
+                <p className="text-gray-600">
+                  Please select a venue from the dropdown to view available time slots.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

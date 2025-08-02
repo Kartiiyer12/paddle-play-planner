@@ -153,7 +153,6 @@ const Register = () => {
                       value={formData.adminCode}
                       onChange={handleChange}
                     />
-                    <p className="text-xs text-gray-500">For testing, use code: ADMIN123</p>
                   </div>
                 )}
                 
