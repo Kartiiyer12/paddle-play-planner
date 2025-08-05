@@ -16,12 +16,10 @@ const Register = () => {
     name: "",
     email: "",
     password: "",
-    confirmPassword: "",
-    adminCode: ""
+    confirmPassword: ""
   });
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showAdminField, setShowAdminField] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -36,11 +34,6 @@ const Register = () => {
       return;
     }
 
-    // Basic admin code validation (can be more robust)
-    if (showAdminField && formData.adminCode !== "ADMIN123") {
-      toast.error("Invalid Admin Code");
-      return;
-    }
     
     setIsLoading(true);
     
@@ -49,8 +42,8 @@ const Register = () => {
         formData.email, 
         formData.password, 
         formData.name, 
-        showAdminField, 
-        formData.adminCode 
+        false, // Always register as regular user
+        "" // No admin code needed
       );
       
       // Success - redirect to login page with a message
@@ -131,30 +124,6 @@ const Register = () => {
                   />
                 </div>
                 
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="adminRegister"
-                    checked={showAdminField}
-                    onCheckedChange={(checked) => setShowAdminField(checked as boolean)}
-                  />
-                  <Label htmlFor="adminRegister" className="text-sm text-gray-600">
-                    Register as admin
-                  </Label>
-                </div>
-                
-                {showAdminField && (
-                  <div className="space-y-2">
-                    <Label htmlFor="adminCode">Admin Code</Label>
-                    <Input
-                      id="adminCode"
-                      name="adminCode"
-                      type="password"
-                      placeholder="Enter admin code"
-                      value={formData.adminCode}
-                      onChange={handleChange}
-                    />
-                  </div>
-                )}
                 
                 <div className="flex items-center space-x-2">
                   <Checkbox
