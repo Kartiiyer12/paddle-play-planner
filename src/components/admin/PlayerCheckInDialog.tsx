@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { BookingWithDetails } from "@/models/types";
 import { getSlotBookings } from "@/services/adminBookingService";
 import { updateBookingCheckInStatus } from "@/services/checkInService";
@@ -63,42 +64,49 @@ const PlayerCheckInDialog = ({ slotId, venueId, onClose }: PlayerCheckInDialogPr
   return (
     <div className="space-y-4">
       {bookings.length > 0 ? (
-        <div className="divide-y">
-          {bookings.map((booking) => (
-            <div key={booking.id} className="py-4 flex items-center justify-between">
-              <div>
-                <div className="font-medium">{booking.userName || 'Unknown Player'}</div>
-                <div className="text-sm text-gray-500 mt-1">
-                  <div className="flex items-center space-x-2">
-                    <User className="w-3.5 h-3.5" />
-                    <span>Player ID: {booking.userId.substring(0, 8)}...</span>
+        <div>
+          <div className="text-sm text-muted-foreground mb-3">
+            Total Players: {bookings.length}
+          </div>
+          <ScrollArea className="h-[400px] w-full">
+            <div className="divide-y pr-4">
+              {bookings.map((booking) => (
+                <div key={booking.id} className="py-4 flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">{booking.userName || 'Unknown Player'}</div>
+                    <div className="text-sm text-gray-500 mt-1">
+                      <div className="flex items-center space-x-2">
+                        <User className="w-3.5 h-3.5" />
+                        <span>Player ID: {booking.userId.substring(0, 8)}...</span>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center space-x-2">
+                      <Badge variant={booking.checkedIn ? "success" : "outline"}>
+                        {booking.checkedIn ? "Checked In" : "Not Checked In"}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`checkin-${booking.id}`}
+                        checked={booking.checkedIn}
+                        onCheckedChange={(checked) => 
+                          handleCheckInToggle(booking.id, checked as boolean)
+                        }
+                      />
+                      <label 
+                        htmlFor={`checkin-${booking.id}`}
+                        className="text-sm font-medium"
+                      >
+                        Check In
+                      </label>
+                    </div>
                   </div>
                 </div>
-                <div className="mt-2 flex items-center space-x-2">
-                  <Badge variant={booking.checkedIn ? "success" : "outline"}>
-                    {booking.checkedIn ? "Checked In" : "Not Checked In"}
-                  </Badge>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id={`checkin-${booking.id}`}
-                    checked={booking.checkedIn}
-                    onCheckedChange={(checked) => 
-                      handleCheckInToggle(booking.id, checked as boolean)
-                    }
-                  />
-                  <label 
-                    htmlFor={`checkin-${booking.id}`}
-                    className="text-sm font-medium"
-                  >
-                    Check In
-                  </label>
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
+          </ScrollArea>
         </div>
       ) : (
         <div className="text-center p-6">

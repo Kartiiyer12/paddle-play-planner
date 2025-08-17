@@ -47,13 +47,12 @@ export const useBookingUsers = () => {
 
       console.log(`Admin ${userData.user.id} fetching all registered users`);
 
-      // Show all non-admin registered users to admin
-      console.log("Executing query for non-admin users...");
+      // Show all registered users to admin (excluding admin profiles)
+      console.log("Executing query for registered users...");
       const { data: nonAdminUsers, error: usersError } = await supabase
         .from('profiles')
-        .select('id, name, email, slot_coins, is_admin')
-        .not('name', 'is', null) // Only get profiles with names (registered users)
-        .eq('is_admin', false); // Only get non-admin users
+        .select('id, name, email, slot_coins')
+        .not('name', 'is', null); // Only get profiles with names (registered users)
         
       if (usersError) {
         console.error("Error fetching users:", usersError);
@@ -65,7 +64,7 @@ export const useBookingUsers = () => {
       // Debug: Try to fetch all profiles to see what we can access
       const { data: allProfiles, error: allError } = await supabase
         .from('profiles')
-        .select('id, name, email, is_admin');
+        .select('id, name, email');
       console.log("All profiles accessible to admin:", allProfiles);
       if (allError) console.error("Error fetching all profiles:", allError);
 
@@ -88,7 +87,7 @@ export const useBookingUsers = () => {
       };
       const userMap = new Map<string, UserMapEntry>();
       
-      // First, add all non-admin registered users (even if they haven't booked yet)
+      // First, add all registered users (even if they haven't booked yet)
       nonAdminUsers?.forEach(user => {
         if (!user) return;
         
