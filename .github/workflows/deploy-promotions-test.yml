@@ -34,6 +34,7 @@ jobs:
       - name: Build
         run: npm run build
         env:
+          NODE_ENV: production
           VITE_SUPABASE_URL: https://klelbxaphyzshyvjbogm.supabase.co
           VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsZWxieGFwaHl6c2h5dmpib2dtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ3NjgzOTIsImV4cCI6MjA3MDM0NDM5Mn0.DrbhTj3Bgr0UWjUx_EQggruTX2A83BATJiYEJeCMehY
 
