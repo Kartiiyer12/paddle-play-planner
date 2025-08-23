@@ -16,10 +16,13 @@ const Register = () => {
     name: "",
     email: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
+    adminCode: ""
   });
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showAdminOption, setShowAdminOption] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -42,8 +45,8 @@ const Register = () => {
         formData.email, 
         formData.password, 
         formData.name, 
-        false, // Always register as regular user
-        "" // No admin code needed
+        isAdmin, // Use isAdmin state
+        formData.adminCode // Use admin code from form
       );
       
       // Success - redirect to login page with a message
@@ -124,6 +127,61 @@ const Register = () => {
                   />
                 </div>
                 
+                {/* Admin Registration Option */}
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="admin-toggle"
+                      checked={showAdminOption}
+                      onCheckedChange={(checked) => {
+                        setShowAdminOption(checked as boolean);
+                        if (!checked) {
+                          setIsAdmin(false);
+                          setFormData({ ...formData, adminCode: "" });
+                        }
+                      }}
+                    />
+                    <Label htmlFor="admin-toggle" className="text-sm text-gray-600">
+                      Register as Administrator
+                    </Label>
+                  </div>
+                  
+                  {showAdminOption && (
+                    <div className="space-y-2 ml-6 p-3 bg-orange-50 rounded-md border border-orange-200">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="admin"
+                          checked={isAdmin}
+                          onCheckedChange={(checked) => setIsAdmin(checked as boolean)}
+                        />
+                        <Label htmlFor="admin" className="text-sm text-orange-800 font-medium">
+                          I have an admin code
+                        </Label>
+                      </div>
+                      
+                      {isAdmin && (
+                        <div className="space-y-2">
+                          <Label htmlFor="adminCode" className="text-sm text-orange-800">
+                            Admin Code
+                          </Label>
+                          <Input
+                            id="adminCode"
+                            name="adminCode"
+                            type="password"
+                            placeholder="Enter admin code"
+                            value={formData.adminCode}
+                            onChange={handleChange}
+                            className="border-orange-300 focus:border-orange-500"
+                            required={isAdmin}
+                          />
+                          <p className="text-xs text-orange-600">
+                            Enter the admin registration code to create an administrator account
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
                 
                 <div className="flex items-center space-x-2">
                   <Checkbox
