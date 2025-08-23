@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Venue } from "@/models/types";
 import { createVenue, updateVenue } from "@/services/venueService";
 import { toast } from "sonner";
+import { getDefaultVenueImage } from "@/utils/imageUtils";
 
 interface VenueFormProps {
   venue?: Venue;
@@ -23,7 +24,7 @@ const VenueForm = ({ venue, onSuccess }: VenueFormProps) => {
     zip: venue?.zip || "",
     description: venue?.description || "",
     courtCount: venue?.courtCount || 1,
-    imageUrl: venue?.imageUrl || "/lovable-uploads/021553a3-f52a-4d73-b0f9-75f2a94711cb.png"
+    imageUrl: venue?.imageUrl || getDefaultVenueImage()
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -60,7 +61,7 @@ const VenueForm = ({ venue, onSuccess }: VenueFormProps) => {
           zip: "",
           description: "",
           courtCount: 1,
-          imageUrl: "/lovable-uploads/021553a3-f52a-4d73-b0f9-75f2a94711cb.png"
+          imageUrl: getDefaultVenueImage()
         });
       }
       
@@ -165,7 +166,7 @@ const VenueForm = ({ venue, onSuccess }: VenueFormProps) => {
                     className="h-40 w-full object-cover rounded-md"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = "/lovable-uploads/021553a3-f52a-4d73-b0f9-75f2a94711cb.png";
+                      target.src = getDefaultVenueImage();
                     }}
                   />
                 </div>

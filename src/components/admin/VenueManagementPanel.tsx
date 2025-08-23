@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { MapPin, Plus, Edit, Trash } from "lucide-react";
 import { toast } from "sonner";
+import { getDefaultVenueImage } from "@/utils/imageUtils";
 import VenueForm from "./VenueForm";
 import { Venue } from "@/models/types";
 import { getVenues, deleteVenue } from "@/services/venueService";
@@ -94,12 +95,12 @@ const VenueManagementPanel = () => {
                 <Card key={venue.id} className="overflow-hidden">
                   <div className="h-40 overflow-hidden">
                     <img
-                      src={venue.imageUrl || "/lovable-uploads/021553a3-f52a-4d73-b0f9-75f2a94711cb.png"}
+                      src={venue.imageUrl || getDefaultVenueImage()}
                       alt={venue.name}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        target.src = "/lovable-uploads/021553a3-f52a-4d73-b0f9-75f2a94711cb.png";
+                        target.src = getDefaultVenueImage();
                       }}
                     />
                   </div>

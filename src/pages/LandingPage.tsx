@@ -9,6 +9,7 @@ import { Venue } from "@/models/types";
 import { getVenues } from "@/services/venueService";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import { getFrontImage } from "@/utils/imageUtils";
 
 const LandingPage = () => {
   const [venues, setVenues] = useState<Venue[]>([]);
@@ -65,7 +66,7 @@ const LandingPage = () => {
             </div>
             <div className="md:w-1/2 flex justify-center">
               <img 
-                  src="/front.jpeg" 
+                  src={getFrontImage()} 
                   alt="Pickleball players" 
                   className="rounded-lg shadow-xl max-w-full h-auto animate-bounce-slow"
                   style={{ maxHeight: "400px" }}
