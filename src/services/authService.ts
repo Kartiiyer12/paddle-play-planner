@@ -131,6 +131,19 @@ export const registerUser = async (email: string, password: string, name?: strin
   return data;
 };
 
+// Request password reset
+export const requestPasswordReset = async (email: string) => {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/login`,
+  });
+  
+  if (error) {
+    throw error;
+  }
+  
+  return true;
+};
+
 // Log out the current user
 export const logoutUser = async () => {
   const { error } = await supabase.auth.signOut();

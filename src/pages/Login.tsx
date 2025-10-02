@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { loginUser } from "@/services/authService";
+import { loginUser, requestPasswordReset } from "@/services/authService";
 import { useAuth } from "@/context/AuthContext";
 
 const Login = () => {
@@ -17,6 +18,9 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [resetEmail, setResetEmail] = useState("");
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const [isResetLoading, setIsResetLoading] = useState(false);
   
   useEffect(() => {
     if (user && !authLoading) {
@@ -61,6 +65,23 @@ const Login = () => {
       toast.error(error.message || "Failed to login. Please check your credentials.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsResetLoading(true);
+    
+    try {
+      await requestPasswordReset(resetEmail);
+      toast.success("Password reset email sent! Please check your inbox.");
+      setIsResetDialogOpen(false);
+      setResetEmail("");
+    } catch (error: any) {
+      console.error("Password reset error:", error);
+      toast.error(error.message || "Failed to send reset email. Please try again.");
+    } finally {
+      setIsResetLoading(false);
     }
   };
 
@@ -118,6 +139,48 @@ const Login = () => {
                   {isLoading ? "Logging in..." : "Login"}
                 </Button>
               </form>
+              
+              <div className="mt-4 text-center">
+                <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="link" className="text-sm text-pickleball-purple">
+                      Forgot Password?
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Reset Password</DialogTitle>
+                      <DialogDescription>
+                        Enter your email address and we'll send you a link to reset your password.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handlePasswordReset}>
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="reset-email">Email</Label>
+                          <Input
+                            id="reset-email"
+                            type="email"
+                            value={resetEmail}
+                            onChange={(e) => setResetEmail(e.target.value)}
+                            placeholder="Enter your email"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button
+                          type="submit"
+                          className="bg-pickleball-purple hover:bg-pickleball-purple/90"
+                          disabled={isResetLoading}
+                        >
+                          {isResetLoading ? "Sending..." : "Send Reset Link"}
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardContent>
             <CardFooter className="flex justify-center">
               <p className="text-sm text-gray-600">
