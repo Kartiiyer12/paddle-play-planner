@@ -1,8 +1,111 @@
+-- =============================================
+-- Add missing updated_at column to bookings table
+-- =============================================
+
+-- Add updated_at column if it doesn't exist
+ALTER TABLE public.bookings
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+
+-- The trigger update_bookings_updated_at already exists from 001_initial_schema.sql
+-- but it was referencing a column that didn't exist. Now that we've added the column,
+-- the trigger should work correctly.
+
+-- =============================================
+-- Update cancel_booking_with_refund function to mark as cancelled instead of deleting
+-- =============================================
+
+CREATE OR REPLACE FUNCTION public.cancel_booking_with_refund(
+  booking_id_param UUID,
+  refund_coin BOOLEAN
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_user_id UUID;
+  v_booking_user_id UUID;
+  v_slot_id UUID;
+  v_venue_id UUID;
+  v_booking_used_coin BOOLEAN;
+BEGIN
+  -- Get the current user ID
+  v_user_id := auth.uid();
+
+  -- Check if user exists
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'User not authenticated';
+  END IF;
+
+  -- Check if the booking exists and get its details including coin usage
+  SELECT user_id, slot_id, venue_id, used_coin
+  INTO v_booking_user_id, v_slot_id, v_venue_id, v_booking_used_coin
+  FROM public.bookings
+  WHERE id = booking_id_param;
+
+  IF v_booking_user_id IS NULL THEN
+    RAISE EXCEPTION 'Booking not found';
+  END IF;
+
+  -- Check if the current user is the booking owner or an admin
+  IF v_user_id <> v_booking_user_id AND
+     NOT EXISTS (
+       SELECT 1 FROM auth.users
+       WHERE id = v_user_id
+       AND raw_user_meta_data->>'role' = 'admin'
+     ) THEN
+    RAISE EXCEPTION 'You can only cancel your own bookings';
+  END IF;
+
+  -- For legacy bookings without used_coin data, assume no coin was used
+  -- This is safer than risking negative balances
+  IF v_booking_used_coin IS NULL THEN
+    v_booking_used_coin := false;
+  END IF;
+
+  -- Mark the booking as cancelled instead of deleting
+  UPDATE public.bookings
+  SET status = 'cancelled'
+  WHERE id = booking_id_param;
+
+  -- Refund coin if needed and if we should refund
+  -- Only refund if the booking actually used a coin and refund is requested
+  IF refund_coin AND v_booking_used_coin THEN
+    -- Use safe coin balance function to prevent race conditions
+    PERFORM safe_update_coin_balance(v_booking_user_id, 1, 'refund');
+  END IF;
+
+  RETURN true;
+END;
+$$;
+
+-- =============================================
+-- Update unique constraint to allow rebooking cancelled slots
+-- =============================================
+
+-- Drop the old unique constraint if it exists
+ALTER TABLE public.bookings DROP CONSTRAINT IF EXISTS unique_user_slot;
+
+-- Drop the old unique index if it exists
+DROP INDEX IF EXISTS public.unique_user_slot;
+
+-- Create a new partial unique index that only applies to confirmed bookings
+-- This allows users to rebook a slot after they've cancelled it
+CREATE UNIQUE INDEX unique_user_slot_confirmed
+ON public.bookings (user_id, slot_id)
+WHERE status = 'confirmed';
+
+-- Add a comment explaining the constraint
+COMMENT ON INDEX public.unique_user_slot_confirmed IS
+'Ensures a user can only have one confirmed booking per slot, but allows rebooking after cancellation';
+
+-- =============================================
+-- Update book_slot_with_coin to reuse cancelled bookings
+-- =============================================
 
 -- Drop the old function signature to avoid conflicts
 DROP FUNCTION IF EXISTS public.book_slot_with_coin(UUID, UUID, BOOLEAN, TEXT);
 
--- Create the function to book slot with coin deduction
 CREATE OR REPLACE FUNCTION public.book_slot_with_coin(
   slot_id_param UUID,
   venue_id_param UUID,
@@ -51,20 +154,20 @@ BEGIN
     -- Regular user booking for themselves
     v_user_id := v_authenticated_user_id;
   END IF;
-  
+
   -- Validate input parameters
   IF slot_id_param IS NULL OR venue_id_param IS NULL THEN
     RAISE EXCEPTION 'Slot ID and Venue ID are required';
   END IF;
-  
+
   -- Check if slot exists and belongs to the venue
   IF NOT EXISTS (
-    SELECT 1 FROM public.slots 
+    SELECT 1 FROM public.slots
     WHERE id = slot_id_param AND venue_id = venue_id_param
   ) THEN
     RAISE EXCEPTION 'Invalid slot or venue combination';
   END IF;
-  
+
   -- Check if user already has a confirmed booking for this slot
   IF EXISTS (
     SELECT 1 FROM public.bookings
@@ -137,18 +240,18 @@ BEGIN
     )
     RETURNING id INTO v_booking_id;
   END IF;
-  
+
   -- Deduct coin if we determined we should use one
   IF v_will_use_coin THEN
     -- Use safe coin balance function to prevent race conditions and negative balances
     PERFORM safe_update_coin_balance(v_user_id, -1, 'deduct');
   END IF;
-  
+
   -- Return the booking details
-  SELECT * INTO v_result 
+  SELECT * INTO v_result
   FROM public.bookings
   WHERE id = v_booking_id;
-  
+
   RETURN row_to_json(v_result);
 END;
 $$;

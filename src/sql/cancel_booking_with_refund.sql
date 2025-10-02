@@ -49,8 +49,9 @@ BEGIN
     v_booking_used_coin := false;
   END IF;
   
-  -- Delete the booking
-  DELETE FROM public.bookings
+  -- Mark the booking as cancelled instead of deleting
+  UPDATE public.bookings
+  SET status = 'cancelled'
   WHERE id = booking_id_param;
   
   -- Refund coin if needed and if we should refund

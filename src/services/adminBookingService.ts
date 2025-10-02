@@ -133,12 +133,12 @@ export const getSlotBookings = async (slotId: string) => {
 
   console.log(`Admin ${userData.user.id} fetching bookings for owned slot ${slotId}.`);
 
-  // Admin owns the venue, proceed to get bookings for this slot
+  // Admin owns the venue, proceed to get bookings for this slot (including cancelled)
   const { data: bookingsData, error: bookingsError } = await supabase
     .from("bookings")
     .select("*")
     .eq("slot_id", slotId)
-    .eq("status", "confirmed");
+    .in("status", ["confirmed", "cancelled"]);
   
   if (bookingsError) {
     console.error("Error fetching slot bookings:", bookingsError);
@@ -146,7 +146,7 @@ export const getSlotBookings = async (slotId: string) => {
   }
   
   if (!bookingsData || bookingsData.length === 0) {
-    console.log(`No confirmed bookings found for slot ${slotId}.`);
+    console.log(`No bookings found for slot ${slotId}.`);
     return [];
   }
   
@@ -174,6 +174,13 @@ export const getSlotBookings = async (slotId: string) => {
   }
 
   for (const booking of bookingsData) {
+    // Fetch user email from profiles table
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("email")
+      .eq("id", booking.user_id)
+      .single();
+
     enhancedBookings.push({
       id: booking.id,
       userId: booking.user_id,
@@ -183,6 +190,7 @@ export const getSlotBookings = async (slotId: string) => {
       createdAt: booking.created_at,
       checkedIn: booking.checked_in || false,
       userName: booking.user_name || 'Unknown Player',
+      userEmail: profileData?.email || '',
       venue: {
         id: venueData.id,
         name: venueData.name,

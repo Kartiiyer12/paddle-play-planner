@@ -50,6 +50,7 @@ export interface Booking {
 export interface BookingWithDetails extends Booking {
   venue: Venue;
   slot: Slot;
+  userEmail?: string;
 }
 
 export interface BookingUser {
