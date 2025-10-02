@@ -134,7 +134,7 @@ export const registerUser = async (email: string, password: string, name?: strin
 // Request password reset
 export const requestPasswordReset = async (email: string) => {
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/login`,
+    redirectTo: `${window.location.origin}/reset-password`,
   });
   
   if (error) {
